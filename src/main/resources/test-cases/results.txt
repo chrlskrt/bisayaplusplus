@@ -1,0 +1,12 @@
+-- test1
+4OO5
+c#last
+
+-- test2
+[-60]
+
+-- test3
+OO
+
+-- test4
+1 2 3 4 5 6 7 8 9 10
