@@ -57,6 +57,7 @@ public class Lexer {
             case '-': // comment
                 if (match('-')){
                     while (peek() != '\n' && !isAtEnd()) advance();
+                    advance(); // to flush out newline
                 } else {
                     addToken(TokenType.MINUS);
                 }
@@ -111,12 +112,13 @@ public class Lexer {
     }
 
     private void addTokenCode(){
-        while (peek() != ']'){
+        do {
             advance();
-        }
+        } while(peek() != ']');
 
-        addToken(TokenType.STRING, program.substring(start, current));
         advance(); // flush ]
+
+        addToken(TokenType.STRING, program.substring(start+1, current-1));
     }
 
     private void addTokenIdentifier(){

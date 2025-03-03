@@ -25,6 +25,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
     public TextArea taOutput;
     List<String> inputProgram = new ArrayList<>();
     private Stage stage;
+    private Environment environment;
 
     public void runInterpreter(ActionEvent actionEvent) {
 //        inputProgram = Arrays.asList(taInput.getText().split("\n")); // splitting the input by line
@@ -47,23 +48,25 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
             return;
         }
 
+
+
         Parser parser = new Parser(tokens);
         List<Stmt> statements;
 
         try {
             statements = parser.parse();
         } catch (ParserException e){
-            taOutput.setText(e.getMessage());
+            taOutput.appendText(e.getMessage());
             return;
         }
 
-        taOutput.clear();
+//        taOutput.clear();
 //        taOutput.setText(new AstPrinter().print(expression));
 
 //        for (Stmt stmt : statements){
 //            taOutput.appendText(stmt.toString());
 //        }
-
+        environment = new Environment();
         interpret(statements);
     }
 
@@ -115,6 +118,13 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
             taOutput.setText(error.getMessage());
             return;
         }
+    }
+
+    @Override
+    public Object visitAssignExpr(Expr.Assign expr) {
+        Object value = evaluate(expr.value);
+        environment.assign(expr.name, value);
+        return value;
     }
 
     // INTERPRETING EXPRESSIONS
@@ -190,6 +200,11 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         return null;
     }
 
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return environment.get(expr.name);
+    }
+
     private boolean isTruthy(Object object){
         if (object == null) return false;
         if (object instanceof Boolean) return (boolean) object;
@@ -214,6 +229,27 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
     public void execute(Stmt stmt){
         stmt.accept(this);
     }
+
+    @Override
+    public Void visitBlockStmt(Stmt.Block stmt) {
+        executeBlock(stmt.statements, new Environment(environment));
+        return null;
+    }
+
+    private void executeBlock(List<Stmt> statements, Environment environment){
+        Environment previous = this.environment;
+
+        try {
+            this.environment = environment;
+
+            for (Stmt stmt : statements){
+                execute(stmt);
+            }
+        } finally {
+            this.environment = previous;
+        }
+    }
+
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expression);
@@ -225,6 +261,17 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         Object value = evaluate(stmt.expression);
         System.out.println(value.toString());
         taOutput.appendText(value.toString() + '\n');
+        return null;
+    }
+
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        Object value = null;
+        if (stmt.initializer != null){
+            value = evaluate(stmt.initializer);
+        }
+
+        environment.define((String) stmt.name.getLiteral(), value);
         return null;
     }
 }
