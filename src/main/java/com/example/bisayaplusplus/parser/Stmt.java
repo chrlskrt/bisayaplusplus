@@ -48,7 +48,8 @@ public abstract class Stmt {
     public final Expr expression;
   }
  public static class Var extends Stmt{
-    public Var (Token name, Expr initializer){
+    public Var (String dataType, Token name, Expr initializer){
+      this.dataType = dataType;
       this.name = name;
       this.initializer = initializer;
     }
@@ -58,6 +59,7 @@ public abstract class Stmt {
       return visitor.visitVarStmt(this);
     }
 
+    public final String dataType;
     public final Token name;
     public final Expr initializer;
   }

@@ -19,7 +19,7 @@ public class GenerateAst {
                 "Assign    : Token name, Expr value",
                 "Binary    : Expr left, Token operator, Expr right",
                 "Grouping  : Expr expression",
-                "Literal   : Object value",
+                "Literal   : String dataType, Object value",
                 "Unary     : Token operator, Expr right",
                 "Variable  : Token name"
         ));
@@ -28,7 +28,7 @@ public class GenerateAst {
            "Block      : List<Stmt> statements",
                 "Expression : Expr expression",
            "Print      : Expr expression",
-           "Var        : Token name, Expr initializer"
+           "Var        : String dataType, Token name, Expr initializer"
         ));
     }
 

@@ -1,13 +1,13 @@
 package com.example.bisayaplusplus.exception;
 
 public class IllegalCharacterException extends LexerException {
-    public IllegalCharacterException(String character, int line) {
-        super(character, line);
+    public IllegalCharacterException(String message, int line) {
+        super(message, line);
     }
 
     @Override
     public String getMessage() {
-        return super.getMessage() + "Illegal character \"" + character + "\" at line " + line + ".";
+        return "Lexer exception: Illegal character \"" + message + "\" at line " + line + ".";
     }
 }
 

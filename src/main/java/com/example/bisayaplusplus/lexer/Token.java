@@ -13,7 +13,7 @@ public class Token {
 
     @Override
     public String toString() {
-        return literal + ": " + type + " @line " + line;
+        return literal + " : " + type + " @line " + line;
     }
 
     public Object getLiteral(){

@@ -8,6 +8,6 @@ public class InvalidNumberException extends LexerException{
 
     @Override
     public String getMessage() {
-        return super.getMessage() + "Invalid number \"" + character + "\" at line " + line + ".";
+        return "Lexer exception:  Invalid number \"" + super.message + "\" at line " + line + ".";
     }
 }

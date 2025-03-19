@@ -44,4 +44,10 @@ public class Environment {
 
         throw new RuntimeError(name, "Undefined variable '" + name.getLiteral().toString() + "'.");
     }
+    
+    public void print(){
+        for (String key: values.keySet()){
+            System.out.println(key + " = " + values.get(key));
+        }
+    }
 }

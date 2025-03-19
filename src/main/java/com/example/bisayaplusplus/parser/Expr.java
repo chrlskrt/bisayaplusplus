@@ -56,7 +56,8 @@ public abstract class Expr {
     public final Expr expression;
   }
  public static class Literal extends Expr{
-    public Literal (Object value){
+    public Literal (String dataType, Object value){
+      this.dataType = dataType;
       this.value = value;
     }
 
@@ -65,6 +66,7 @@ public abstract class Expr {
       return visitor.visitLiteralExpr(this);
     }
 
+    public final String dataType;
     public final Object value;
   }
  public static class Unary extends Expr{

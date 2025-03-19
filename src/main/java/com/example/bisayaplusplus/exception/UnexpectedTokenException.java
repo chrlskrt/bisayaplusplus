@@ -1,12 +1,14 @@
 package com.example.bisayaplusplus.exception;
 
 public class UnexpectedTokenException extends LexerException {
-    public UnexpectedTokenException(String character, int line) {
+    String message;
+    public UnexpectedTokenException(String character, String message, int line) {
         super(character, line);
+        this.message = message;
     }
 
     @Override
     public String getMessage() {
-        return super.getMessage() + "Unexpected token \"" + character + "\" at line " + line + ".";
+        return "Lexer exception: Unexpected token \"" + super.message + "\" at line " + line + ". " + message;
     }
 }

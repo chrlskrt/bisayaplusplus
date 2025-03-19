@@ -1,15 +1,12 @@
 package com.example.bisayaplusplus.parser;
 
 import com.example.bisayaplusplus.exception.ParserException;
-import com.example.bisayaplusplus.exception.RuntimeError;
 import com.example.bisayaplusplus.lexer.Lexer;
 import com.example.bisayaplusplus.lexer.Token;
 import com.example.bisayaplusplus.lexer.TokenType;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicStampedReference;
 
 public class Parser {
     private final List<Token> tokens;
@@ -23,122 +20,155 @@ public class Parser {
     public List<Stmt> parse() throws ParserException {
         List<Stmt> statements = new ArrayList<>();
 
-        if (!match(TokenType.START_STMT)){
-            throw new ParserException("Expected 'SUGOD' at the start of the program.", peek().getLine());
+        // START STATEMENT
+        if (!matchToken(TokenType.START_STMT)){
+            throw new ParserException("Expected 'SUGOD' at the start of the program.", getCurrToken().getLine());
         }
 
-        consume(TokenType.NEW_LINE, "Expected NEW_LINE after 'SUGOD");
+        // there should be a new_line after SUGOD
+        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after 'SUGOD'");
 
-        while (!isAtEnd()){
-            statements.add(declaration());
+        // go through all the tokens after SUGOD
+        try {
+            while (!isCurrTokenType(TokenType.END_STMT) || isAtEnd()){
+                parseDeclarations(statements);
+            }
+        } catch (Exception e){
+            if (e instanceof ParserException){
+                throw (ParserException) e;
+            }
+
+            System.err.println(e.getMessage());
+        }
+
+        if (isCurrTokenType(TokenType.END_STMT)){
+            advance(); // consume KATAPUSAN keyword
+        } else {
+            throw new ParserException("Expected 'KATAPUSAN' at the end of the program.", getPrevToken().getLine() + 1);
+        }
+
+        System.out.println(isAtEnd());
+
+        // checking if there's extra code after a 'KATAPUSAN' that is not a new_line character
+        if (!isAtEnd()){
+            while (isCurrTokenType(TokenType.NEW_LINE)){
+                advance();
+            }
+
+            if (!isAtEnd()){
+                System.out.println(getCurrToken());
+                throw new ParserException("Unexpected code found after 'KATAPUSAN' end statement.", getCurrToken().getLine());
+            }
         }
 
         return statements;
     }
 
     // function for declaration statement
-    private Stmt declaration() throws ParserException {
-        try {
-            if (match(TokenType.CREATE_STMT)) return varDeclaration();
-
-            return statement();
-        } catch (ParserException e){
-            synchronize();
-            return null;
+    private void parseDeclarations(List<Stmt> statements) throws ParserException {
+        if (matchToken(TokenType.CREATE_STMT)) {
+            System.out.println("adding var dec statement");
+            statements.addAll(parseVarDeclaration());
+            return;
         }
+
+        System.out.println("adding normal statement");
+        statements.add(parseStatement());
     }
 
-    private Stmt varDeclaration() throws ParserException {
-        if (!match(TokenType.INT_TYPE, TokenType.BOOL_TYPE, TokenType.CHAR_TYPE, TokenType.FLOAT_TYPE)){
-            throw new ParserException("Expected DATA_TYPE, but received " + previous().getTokenType() + " ", previous().getLine());
-        }
-        Token name = consume(TokenType.IDENTIFIER, "Expected IDENTIFIER after DATA_TYPE / COMMA.");
-        Expr initializer = null;
-        if (match(TokenType.EQUAL)){
-            initializer = expression();
+    // variable declaration
+    private List<Stmt> parseVarDeclaration() throws ParserException {
+        String dataType = switch (getCurrToken().getTokenType()) {
+            case INT_TYPE -> "int";
+            case BOOL_TYPE -> "boolean";
+            case CHAR_TYPE -> "char";
+            case DOUBLE_TYPE -> "double";
+            default ->
+                    throw new ParserException("Expected DATA_TYPE after 'MUGNA', but received " + getCurrToken().getTokenType() + " ", getCurrToken().getLine());
+        };
+
+        advance(); // consume data type
+        System.out.println("after data type: " + getCurrToken());
+
+        List<Stmt> varDeclarations = new ArrayList<>();
+
+        while (!isCurrTokenType(TokenType.NEW_LINE)){
+            Token name = consumeToken(TokenType.IDENTIFIER, "Expected IDENTIFIER after DATA_TYPE / COMMA.");
+            Expr initializer = null;
+            if (matchToken(TokenType.EQUAL)){
+                System.out.println(name.getLiteral() + " has initialized value");
+                initializer = parseExpression();
+                System.out.println(name.getLiteral() + " is initialized with " + ((Expr.Literal) initializer).value);
+            }
+
+            varDeclarations.add(new Stmt.Var(dataType, name, initializer));
+
+            System.out.println(getCurrToken());
+            if (isCurrTokenType(TokenType.COMMA)) advance();
         }
 
-        consume(TokenType.NEW_LINE, "Expected NEW_LINE after variable declaration.");
-        return new Stmt.Var(name, initializer);
+        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after variable declaration.");
+        return varDeclarations;
     }
-
-//    private List<Stmt> varDeclaration() throws ParserException {
-//        if (!match(TokenType.INT_TYPE, TokenType.CHAR_TYPE, TokenType.BOOL_TYPE, TokenType.FLOAT_TYPE)){
-//            throw new ParserException("Expected DATA_TYPE, but received " + previous().getLiteral(), previous().getLine());
-//        }
-//
-//        List<Stmt> statements = new ArrayList<>();
-//
-//
-//        do {
-//            Token name = consume(TokenType.IDENTIFIER, "Expected IDENTIFIER after DATA_TYPE / COMMA.");
-//            Expr initializer = null;
-//            if (match(TokenType.EQUAL)){
-//                initializer = expression();
-//            }
-//
-//            statements.add(new Stmt.Var(name, initializer));
-//        } while (match(TokenType.COMMA));
-//
-//        consume(TokenType.NEW_LINE, "Expected NEW_LINE after variable declaration.");
-//        return statements;
-//    }
 
     // function to identify statement
-    private Stmt statement() throws ParserException {
+    private Stmt parseStatement() throws ParserException {
         // if it starts with IPAKITA / PRINT_STMT, it will go to the printStatement parser
-        if (match(TokenType.PRINT_STMT)) return printStatement();
-        if (match(TokenType.CODE_BLOCK)) return new Stmt.Block(block());
+        if (matchToken(TokenType.PRINT_STMT)) return parsePrintStatement();
+        if (matchToken(TokenType.CODE_BLOCK)) return new Stmt.Block(parseBlock());
 
-        return expressionStatement();
+        return parseExprStatement();
     }
 
     /*
     * PRINT STATEMENT SYNTAX
     * IPAKITA: {EXPR}
     */
-    private Stmt printStatement() throws ParserException {
-        consume(TokenType.COLON, "Expect ':' after IPAKITA statement.");
-        Expr value = expression();
-        consume(TokenType.NEW_LINE, "Expect NEWLINE after value.");
+    private Stmt parsePrintStatement() throws ParserException {
+        consumeToken(TokenType.COLON, "Expect ':' after IPAKITA statement.");
+        Expr value = parseExpression();
+        consumeToken(TokenType.NEW_LINE, "Expect NEWLINE after value.");
         return new Stmt.Print(value);
     }
 
     // for code blocks
-    private List<Stmt> block() throws ParserException {
-        List<Stmt> statements = new ArrayList<>();
-        consume(TokenType.LEFT_BRACKET, "Expect '{' after PUNDOK statement.");
+    private List<Stmt> parseBlock() throws ParserException {
+        List<Stmt> blockStatements = new ArrayList<>();
+        consumeToken(TokenType.LEFT_CURLY, "Expect '{' after PUNDOK statement.");
 
-        while (!check(TokenType.RIGHT_BRACKET) && !isAtEnd()){
-            statements.add(declaration());
+        while (!isCurrTokenType(TokenType.RIGHT_CURLY) && !isAtEnd()){
+            parseDeclarations(blockStatements);
         }
 
-        consume(TokenType.RIGHT_BRACKET, "Expect '}' after block.");
-        return statements;
+        consumeToken(TokenType.RIGHT_CURLY, "Expect '}' after block.");
+        return blockStatements;
     }
 
     // PARSING EXPRESSION STATEMENTS - refers mostly to mathematical expressions
-    private Stmt expressionStatement() throws ParserException {
-        Expr expr = expression();
-        consume(TokenType.NEW_LINE, "Expect '\n' after the expression");
+    private Stmt parseExprStatement() throws ParserException {
+        Expr expr = parseExpression();
+        consumeToken(TokenType.NEW_LINE, "Expect '\n' after the expression");
         return new Stmt.Expression(expr);
     }
 
     // expression - equality - comparison - term - factor - unary - primary
-    private Expr expression() throws ParserException {
-        return assignment();
+    private Expr parseExpression() throws ParserException {
+        return parseAssignment();
     }
 
     // check assigning variable value
-    private Expr assignment() throws ParserException {
-        Expr expr = equality();
+    private Expr parseAssignment() throws ParserException {
+        Expr expr = parseEquality();
 
-        if (match(TokenType.EQUAL)){
-            Token equals = previous();
-            Expr value = assignment();
+        if (matchToken(TokenType.EQUAL)){
+            System.out.println("Assignment");
+            Token equals = getPrevToken();
+            Expr value = parseAssignment();
 
             if (expr instanceof Expr.Variable){
                 Token name = ((Expr.Variable) expr).name;
+                System.out.println(name);
+                System.out.println(value);
                 return new Expr.Assign(name, value);
             }
 
@@ -148,115 +178,113 @@ public class Parser {
         return expr;
     }
 
-    private Expr equality() throws ParserException {
-        Expr expr = comparison();
+    private Expr parseEquality() throws ParserException {
+        Expr expr = parseComparison();
 
-        while (match(TokenType.NOT_EQUAL, TokenType.DOUBLE_EQUAL)) {
-            Token operator = previous();
-            Expr right = comparison();
+        while (matchToken(TokenType.NOT_EQUAL, TokenType.DOUBLE_EQUAL)) {
+            Token operator = getPrevToken();
+            Expr right = parseComparison();
             expr = new Expr.Binary(expr, operator, right);
         }
 
         return expr;
     }
 
-    private Expr comparison() throws ParserException {
-        Expr expr = term();
+    private Expr parseComparison() throws ParserException {
+        Expr expr = parseTerm();
 
-        while (match(TokenType.GREATER_THAN, TokenType.GREATER_OR_EQUAL, TokenType.LESSER_THAN, TokenType.LESSER_OR_EQUAL)) {
-            Token operator = previous();
-            Expr right = term();
+        while (matchToken(TokenType.GREATER_THAN, TokenType.GREATER_OR_EQUAL, TokenType.LESSER_THAN, TokenType.LESSER_OR_EQUAL)) {
+            Token operator = getPrevToken();
+            Expr right = parseTerm();
             expr = new Expr.Binary(expr, operator, right);
         }
 
         return expr;
     }
 
-    private Expr term() throws ParserException {
-        Expr expr = factor();
+    private Expr parseTerm() throws ParserException {
+        Expr expr = parseFactor();
 
-        while (match(TokenType.MINUS, TokenType.PLUS, TokenType.AMPERSAND, TokenType.LOGIC_OR)) {
-            Token operator = previous();
-            Expr right = factor();
+        while (matchToken(TokenType.MINUS, TokenType.PLUS, TokenType.CONCAT, TokenType.LOGIC_OR)) {
+            Token operator = getPrevToken();
+            Expr right = parseFactor();
             expr = new Expr.Binary(expr, operator, right);
         }
 
         return expr;
     }
 
-    private Expr factor() throws ParserException {
-        Expr expr = unary();
+    private Expr parseFactor() throws ParserException {
+        Expr expr = parseUnary();
 
-        while (match(TokenType.DIVIDE, TokenType.MULTIPLY, TokenType.MODULO, TokenType.LOGIC_AND)) {
-            Token operator = previous();
-            Expr right = unary();
+        while (matchToken(TokenType.DIVIDE, TokenType.MULTIPLY, TokenType.MODULO, TokenType.LOGIC_AND)) {
+            Token operator = getPrevToken();
+            Expr right = parseUnary();
             expr = new Expr.Binary(expr, operator, right);
         }
 
         return expr;
     }
 
-    private Expr unary() throws ParserException {
-        if (match(TokenType.LOGIC_NOT)) {
-            Token operator = previous();
-            Expr right = unary();
+    private Expr parseUnary() throws ParserException {
+        if (matchToken(TokenType.LOGIC_NOT, TokenType.NEGATIVE, TokenType.POSITIVE)) {
+            Token operator = getPrevToken();
+            Expr right = parseUnary();
             return new Expr.Unary(operator, right);
         }
 
-        return primary();
+        return parsePrimary();
     }
 
-    private Expr primary() throws ParserException {
-        if (match(TokenType.BOOL_FALSE)) return new Expr.Literal(false);
-        if (match(TokenType.BOOL_TRUE)) return new Expr.Literal(true);
-        if (match(TokenType.NULL)) return new Expr.Literal(null);
-
-        if (match(TokenType.INTEGER, TokenType.FLOAT, TokenType.STRING)) {
-            return new Expr.Literal(previous().getLiteral());
-        }
-
-        if (match(TokenType.IDENTIFIER)){
-            return new Expr.Variable(previous());
-        }
-
-        if (match(TokenType.LEFT_PAREN)) {
-            Expr expr = expression();
-            consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
+    private Expr parsePrimary() throws ParserException {
+        if (matchToken(TokenType.BOOL_FALSE)) return new Expr.Literal("boolean", false);
+        if (matchToken(TokenType.BOOL_TRUE)) return new Expr.Literal("boolean", true);
+        if (matchToken(TokenType.NULL)) return new Expr.Literal("null", null);
+        if (matchToken(TokenType.INTEGER)) return new Expr.Literal("int", getCurrToken().getLiteral());
+        if (matchToken(TokenType.DOUBLE)) return new Expr.Literal("double", getCurrToken().getLiteral());
+        if (matchToken(TokenType.STRING)) return new Expr.Literal("string", getCurrToken().getLiteral());
+        if (matchToken(TokenType.IDENTIFIER)) return new Expr.Variable(getPrevToken());
+        if (matchToken(TokenType.LEFT_PAREN)){
+            Expr expr = parseExpression();
+            consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after expression.");
             return new Expr.Grouping(expr);
         }
 
-        Token token = peek();
-
-        throw new ParserException("Expect expression. " +   ((token.getLiteral() == null ? token.getTokenType().toString() : token.getLiteral())), token.getLine());
+        Token token = getCurrToken();
+        throw new ParserException("Expected expression not found. " +   ((token.getLiteral() == null ? token.getTokenType().toString() : token.getLiteral())), token.getLine());
     }
 
-    // i d k what is thiz for
-    private void synchronize() throws ParserException {
+    // error recovery function in the parser
+    private void synchronize() {
         advance();
 
+        // Skip tokens until a valid statement start is found
         while (!isAtEnd()){
-            if (previous().getTokenType() == TokenType.NEW_LINE) return;
-            if (Lexer.keywords.containsValue(peek().getTokenType())){
-                return;
+            if (getPrevToken().getTokenType() == TokenType.NEW_LINE) return; // stops at a NEW_LINE
+            if (Lexer.keywords.containsValue(getCurrToken().getTokenType())){
+                return; // stops at a keyword
             }
 
-            advance();
+            advance(); // skip invalid tokens
         }
     }
 
-    // function for throwing errors basically
-    private Token consume(TokenType type, String message) throws ParserException {
-        if (check(type)) return advance();
+    // function for throwing errors
+    private Token consumeToken(TokenType expectedType, String message) throws ParserException {
+        if (isCurrTokenType(expectedType)) return advance(); // if the token type matches, it will increment current counter
 
-        Token token = peek();
+        // if the type does not match
+        Token token = getCurrToken();
 
+        // throws exception. it gives the message and the token that was found instead of the expected tokentype
         throw new ParserException(message + " " + ((token.getLiteral()) == null ? token.getTokenType().toString() : token.getLiteral()), token.getLine());
     }
 
     // checks if the current expr has any of those token types
-    private boolean match(TokenType... types) throws ParserException {
+    // automatically advances to the next token type if found a match
+    private boolean matchToken(TokenType... types) {
         for (TokenType type : types) {
-            if (check(type)) {
+            if (isCurrTokenType(type)) {
                 advance();
                 return true;
             }
@@ -265,34 +293,30 @@ public class Parser {
         return false;
     }
 
-    // checks if current token type is the same as the given type
-    private boolean check(TokenType type) throws ParserException {
+    // checks if the current token type is the same as the given type
+    private boolean isCurrTokenType(TokenType type){
         if (isAtEnd()) return false;
-        return peek().getTokenType() == type;
+        return getCurrToken().getTokenType() == type;
     }
 
-    // get current token, increment current
-    private Token advance() throws ParserException {
+    // get next token, increment current counter
+    private Token advance() {
         if (!isAtEnd()) current++;
-        return previous();
-    }
-
-    // check if the parser has already reached the end of the program
-    private boolean isAtEnd() throws ParserException {
-//        if (current == tokens.size()){
-//            throw new ParserException("Expected 'KATAPUSAN' at the end of the program.", previous().getLine()+1);
-//        }
-        return peek().getTokenType() == TokenType.END_STMT;
+        return getPrevToken();
     }
 
     // get next token wo incrementing the current counter
-    private Token peek() {
+    private Token getCurrToken() {
         return tokens.get(current);
     }
 
     // get previous token
-    private Token previous() {
+    private Token getPrevToken() {
         return tokens.get(current - 1);
     }
 
+    // check if the parser has already reached the end of the program
+    private boolean isAtEnd(){
+        return current == tokens.size();
+    }
 }

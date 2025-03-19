@@ -1,10 +1,10 @@
 package com.example.bisayaplusplus;
 
+import com.example.bisayaplusplus.exception.LexerException;
 import com.example.bisayaplusplus.exception.ParserException;
 import com.example.bisayaplusplus.exception.RuntimeError;
 import com.example.bisayaplusplus.lexer.Lexer;
 import com.example.bisayaplusplus.lexer.Token;
-import com.example.bisayaplusplus.parser.AstPrinter;
 import com.example.bisayaplusplus.parser.Expr;
 import com.example.bisayaplusplus.parser.Parser;
 import com.example.bisayaplusplus.parser.Stmt;
@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
@@ -43,8 +42,12 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
             for (Token t: tokens){
                 taOutput.appendText(t.toString() + "\n");
             }
+        } catch (LexerException e) {
+            taOutput.appendText(e.getMessage());
+            return;
         } catch (Exception e){
-            taOutput.setText(e.getMessage());
+            e.printStackTrace();
+            taOutput.appendText("Lexer exception: " + e.getMessage());
             return;
         }
 
@@ -58,16 +61,25 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         } catch (ParserException e){
             taOutput.appendText(e.getMessage());
             return;
+        } catch (Exception e){
+            e.printStackTrace();
+            taOutput.appendText("Parser exception: " + e.getMessage());
+            return;
         }
 
 //        taOutput.clear();
 //        taOutput.setText(new AstPrinter().print(expression));
 
-//        for (Stmt stmt : statements){
-//            taOutput.appendText(stmt.toString());
-//        }
+        for (Stmt stmt : statements){
+            taOutput.appendText(stmt.toString() + '\n');
+        }
         environment = new Environment();
+
+        taOutput.appendText("OUTPUT:\n");
         interpret(statements);
+
+        environment.print();
+
     }
 
     public void openFile(ActionEvent actionEvent) throws IOException {
@@ -104,18 +116,20 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         }
     }
 
-    // ignore
+    // ux purposes
     void setStage(Stage stage){
         this.stage = stage;
     }
 
+    // function for interpreting
+    // goes through all the statements to interpret
     void interpret(List<Stmt> statements){
         try {
             for (Stmt stmt : statements){
                 execute(stmt);
             }
         } catch (RuntimeError error){
-            taOutput.setText(error.getMessage());
+            taOutput.appendText(error.getMessage());
             return;
         }
     }
@@ -123,6 +137,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
         Object value = evaluate(expr.value);
+        System.out.println("assign value: " + value.getClass());
         environment.assign(expr.name, value);
         return value;
     }
@@ -155,7 +170,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
                 }
 
                 throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.");
-            case AMPERSAND: return left.toString() + right.toString();
+            case CONCAT: return left.toString() + right.toString();
             case GREATER_THAN:
                 checkNumberOperands(expr.operator, left, right);
                 return (double)left > (double)right;
@@ -190,9 +205,12 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         Object right = evaluate(expr.right);
 
         switch (expr.operator.getTokenType()){
-            case MINUS:
+            case NEGATIVE:
                 checkNumberOperand(expr.operator, right);
                 return -(double) right;
+            case POSITIVE:
+                checkNumberOperand(expr.operator, right);
+                return +(double) right;
             case LOGIC_NOT:
                 return !isTruthy(right);
         }
@@ -260,6 +278,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
     public Void visitPrintStmt(Stmt.Print stmt) {
         Object value = evaluate(stmt.expression);
         System.out.println(value.toString());
+        System.out.println("appending to output");
         taOutput.appendText(value.toString() + '\n');
         return null;
     }
@@ -269,7 +288,10 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         Object value = null;
         if (stmt.initializer != null){
             value = evaluate(stmt.initializer);
+            System.out.println(stmt.dataType + " " + stmt.name + " = " + stmt.initializer);
         }
+
+
 
         environment.define((String) stmt.name.getLiteral(), value);
         return null;

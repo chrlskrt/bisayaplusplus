@@ -8,6 +8,6 @@ public class UnterminatedStringException extends LexerException{
 
     @Override
     public String getMessage() {
-        return super.getMessage() + "Unterminated string at line " + line + ".";
+        return "Lexer exception: Unterminated string at line " + line + ".";
     }
 }
