@@ -197,7 +197,7 @@ public class Parser {
     }
 
     private Expr unary() throws ParserException {
-        if (match(TokenType.LOGIC_NOT, TokenType.NEGATIVE, TokenType.POSITIVE)) {
+        if (match(TokenType.LOGIC_NOT)) {
             Token operator = previous();
             Expr right = unary();
             return new Expr.Unary(operator, right);

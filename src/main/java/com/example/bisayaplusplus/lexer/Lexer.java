@@ -28,6 +28,12 @@ public class Lexer {
             put("LETRA", TokenType.CHAR_TYPE);
             put("TIPIK", TokenType.FLOAT_TYPE);
             put("TINUOD", TokenType.BOOL_TYPE);
+
+            put("KUNG", TokenType.IF);
+            put("DILI", TokenType.IF_ELSE);
+            put("WALA", TokenType.ELSE);
+            put("PUNDOK", TokenType.CODE_BLOCK);
+            put("ALANG SA", TokenType.FOR_LOOP);
         }
     };
 
@@ -48,12 +54,13 @@ public class Lexer {
         char c = advance();
 
         switch(c){
-            case '[': addTokenCode(); break;
+            case '(': addToken(TokenType.LEFT_PAREN); break;
+            case ')': addToken(TokenType.RIGHT_PAREN); break;
+            case '[': addToken(TokenType.LEFT_BRACKET); break;
+            case ']': addToken(TokenType.RIGHT_BRACKET); break;
             case '#': addToken(TokenType.HASHTAG); break;
             case '&': addToken(TokenType.AMPERSAND); break;
             case '=': addToken(match('=') ? TokenType.DOUBLE_EQUAL : TokenType.EQUAL); break;
-            case '(': addToken(TokenType.LEFT_PAREN); break;
-            case ')': addToken(TokenType.RIGHT_PAREN); break;
             case '-': // comment
                 if (match('-')){
                     while (peek() != '\n' && !isAtEnd()) advance();
@@ -65,6 +72,8 @@ public class Lexer {
             case '+': addToken(TokenType.PLUS); break;
             case '/': addToken(TokenType.DIVIDE); break;
             case '%': addToken(TokenType.MODULO);break;
+            case ':': addToken(TokenType.COLON);break;
+            case '$': addToken(TokenType.DOLLAR_SIGN);break;
             case '>': addToken(match('=') ? TokenType.GREATER_OR_EQUAL : TokenType.GREATER_THAN); break;
             case '<': addToken(match('=') ? TokenType.LESSER_OR_EQUAL : match('>') ? TokenType.NOT_EQUAL : TokenType.LESSER_THAN);break;
             case ' ':
@@ -87,8 +96,7 @@ public class Lexer {
                 addTokenIdentifier();
                 break;
             case ',': addToken(TokenType.COMMA);break;
-            case ':': addToken(TokenType.COLON);break;
-            case '$': addToken(TokenType.DOLLAR_SIGN);break;
+
             default:
                 if (Character.isDigit(c)){
                     addTokenNumber();
@@ -111,6 +119,8 @@ public class Lexer {
         return program.charAt(current);
     }
 
+    // sa gigamitan escape code
+    // i scrap ni siya na function
     private void addTokenCode(){
         do {
             advance();
@@ -121,6 +131,7 @@ public class Lexer {
         addToken(TokenType.STRING, program.substring(start+1, current-1));
     }
 
+    // function to take in variable names
     private void addTokenIdentifier(){
         while (checkIdentifierChar(peek())){
             advance();
@@ -131,11 +142,13 @@ public class Lexer {
 
         if (type == null){
             addToken(TokenType.IDENTIFIER, value);
-        } else {
+        }
+        else {
             addToken(type);
         }
     }
 
+    // function to check if the char kay valid siya sa identifier
     private boolean checkIdentifierChar(char c){
         if (Character.isLetter(c) || Character.isDigit(c) || c == '_'){
             return true;
@@ -198,6 +211,7 @@ public class Lexer {
         }
     }
 
+    // function to add character
     private void addTokenChar() throws UnexpectedTokenException {
         if (peek() == '\'' || isAtEnd()){
             throw new UnexpectedTokenException("\'", line);
@@ -212,6 +226,7 @@ public class Lexer {
         advance();
     }
 
+    // check if the current character matched the expected character
     private boolean match(char expected){
         if (isAtEnd()) return false;
         if (program.charAt(current) != expected) return false;
@@ -234,5 +249,8 @@ public class Lexer {
         tokens.add(new Token(type, literal, line));
     }
 
-
+    // function to check the recently added token type
+    private TokenType checkToken(){
+        return tokens.get(tokens.size()-1).getTokenType();
+    }
 }
