@@ -1,0 +1,25 @@
+package com.example.bisayaplusplus.lexer;
+
+public enum TokenType {
+    // single-character
+    PLUS, MINUS, MULTIPLY, DIVIDE, COLON, EQUAL, AMPERSAND, HASHTAG, LEFT_BRACKET, RIGHT_BRACKET, DOLLAR_SIGN, COMMA, NEW_LINE,
+    LEFT_PAREN, RIGHT_PAREN, GREATER_THAN, LESSER_THAN, MODULO,
+
+    // double-char
+    DOUBLE_EQUAL, NOT_EQUAL, DOUBLE_MINUS, GREATER_OR_EQUAL, LESSER_OR_EQUAL,
+
+    // literals
+    IDENTIFIER, STRING, INTEGER, FLOAT, BOOL_TRUE, BOOL_FALSE, CHARACTER,
+
+    // datatype
+    INT_TYPE, FLOAT_TYPE, CHAR_TYPE, BOOL_TYPE,
+
+    // keywords
+    START_STMT, END_STMT, CREATE_STMT, READ_STMT, PRINT_STMT,
+
+    // logical op
+    LOGIC_OR, LOGIC_NOT, LOGIC_AND,
+
+    // control structures
+    IF, IF_ELSE, ELSE, CODE_BLOCK, FOR_LOOP, NULL,
+}
