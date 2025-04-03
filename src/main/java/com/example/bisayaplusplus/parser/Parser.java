@@ -1,6 +1,7 @@
 package com.example.bisayaplusplus.parser;
 
 import com.example.bisayaplusplus.exception.ParserException;
+import com.example.bisayaplusplus.parser.AstPrinter;
 import com.example.bisayaplusplus.lexer.Lexer;
 import com.example.bisayaplusplus.lexer.Token;
 import com.example.bisayaplusplus.lexer.TokenType;
@@ -11,6 +12,7 @@ import java.util.List;
 public class Parser {
     private final List<Token> tokens;
     private int current = 0;
+    private AstPrinter astPrinter = new AstPrinter();
 
     public Parser(List<Token> tokens){
         this.tokens = tokens;
@@ -127,6 +129,7 @@ public class Parser {
     private Stmt parsePrintStatement() throws ParserException {
         consumeToken(TokenType.COLON, "Expect ':' after IPAKITA statement.");
         Expr value = parseExpression();
+        System.out.println("the value for print: " + astPrinter.print(value));
         consumeToken(TokenType.NEW_LINE, "Expect NEWLINE after value.");
         return new Stmt.Print(value);
     }
@@ -237,12 +240,13 @@ public class Parser {
     }
 
     private Expr parsePrimary() throws ParserException {
+        System.out.println("parsePrimary: " + getCurrToken().getLiteral() + getCurrToken().getTokenType());
         if (matchToken(TokenType.BOOL_FALSE)) return new Expr.Literal("boolean", false);
         if (matchToken(TokenType.BOOL_TRUE)) return new Expr.Literal("boolean", true);
         if (matchToken(TokenType.NULL)) return new Expr.Literal("null", null);
-        if (matchToken(TokenType.INTEGER)) return new Expr.Literal("int", getCurrToken().getLiteral());
-        if (matchToken(TokenType.DOUBLE)) return new Expr.Literal("double", getCurrToken().getLiteral());
-        if (matchToken(TokenType.STRING)) return new Expr.Literal("string", getCurrToken().getLiteral());
+        if (matchToken(TokenType.INTEGER)) return new Expr.Literal("int", getPrevToken().getLiteral());
+        if (matchToken(TokenType.DOUBLE)) return new Expr.Literal("double", getPrevToken().getLiteral());
+        if (matchToken(TokenType.STRING)) return new Expr.Literal("string", getPrevToken().getLiteral());
         if (matchToken(TokenType.IDENTIFIER)) return new Expr.Variable(getPrevToken());
         if (matchToken(TokenType.LEFT_PAREN)){
             Expr expr = parseExpression();
