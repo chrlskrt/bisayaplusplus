@@ -241,18 +241,20 @@ public class Parser {
 
     private Expr parsePrimary() throws ParserException {
         System.out.println("parsePrimary: " + getCurrToken().getLiteral() + getCurrToken().getTokenType());
-        if (matchToken(TokenType.BOOL_FALSE)) return new Expr.Literal("boolean", false);
-        if (matchToken(TokenType.BOOL_TRUE)) return new Expr.Literal("boolean", true);
+        if (matchToken(TokenType.BOOL_FALSE, TokenType.BOOL_TRUE)) return new Expr.Literal("boolean", getPrevToken().getLiteral());
         if (matchToken(TokenType.NULL)) return new Expr.Literal("null", null);
+        if (matchToken(TokenType.CHARACTER)) return new Expr.Literal("char", getPrevToken().getLiteral());
         if (matchToken(TokenType.INTEGER)) return new Expr.Literal("int", getPrevToken().getLiteral());
         if (matchToken(TokenType.DOUBLE)) return new Expr.Literal("double", getPrevToken().getLiteral());
         if (matchToken(TokenType.STRING)) return new Expr.Literal("string", getPrevToken().getLiteral());
+        if (matchToken(TokenType.ESCAPE_CHAR)) return new Expr.Literal("char", getPrevToken().getLiteral());
         if (matchToken(TokenType.IDENTIFIER)) return new Expr.Variable(getPrevToken());
         if (matchToken(TokenType.LEFT_PAREN)){
             Expr expr = parseExpression();
             consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after expression.");
             return new Expr.Grouping(expr);
         }
+        if (matchToken(TokenType.CNEW_LINE)) return new Expr.Literal("char", '\n');
 
         Token token = getCurrToken();
         throw new ParserException("Expected expression not found. " +   ((token.getLiteral() == null ? token.getTokenType().toString() : token.getLiteral())), token.getLine());

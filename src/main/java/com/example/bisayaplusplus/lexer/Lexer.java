@@ -68,6 +68,7 @@ public class Lexer {
                 if (charMatch('-')){
                     while (getNextChar() != '\n' && !isAtEnd()) getCurrCharThenNext();
                     getCurrCharThenNext(); // flush out newline
+                    line++;
                 } else if (isUnaryToken()) {
                     addToken(TokenType.NEGATIVE); // unary operator
                 } else {
