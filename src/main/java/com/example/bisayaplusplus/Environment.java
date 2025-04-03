@@ -16,14 +16,26 @@ public class Environment {
         this.enclosing = enclosing;
     }
     private final Map<String, Object> values = new HashMap<>();
+    private final Map<String, String> dataTypes = new HashMap<>();
 
-    public void define(String name, Object value){
+    public void define(String name, String dataType, Object value){
+        dataTypes.put(name, dataType);
         values.put(name, value);
     }
 
     public Object get(Token name){
         if (values.containsKey(name.getLiteral())){
             return values.get(name.getLiteral());
+        };
+
+        if (enclosing != null) return enclosing.get(name);
+
+        throw new RuntimeError(name, "Undefined variable '" + name.getLiteral() + "'.");
+    }
+
+    public Object getType(Token name){
+        if (dataTypes.containsKey(name.getLiteral())){
+            return dataTypes.get(name.getLiteral());
         };
 
         if (enclosing != null) return enclosing.get(name);

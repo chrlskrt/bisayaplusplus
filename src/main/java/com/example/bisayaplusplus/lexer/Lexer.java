@@ -87,7 +87,6 @@ public class Lexer {
                 if (!charMatch(']')){
                     throw new UnexpectedTokenException(getCurrCharThenNext() + "", "Expected closing escape code ']'.", line);
                 }
-                getCurrCharThenNext(); // flush closing escape code
             // for whitespaces
             case ' ':
             case '\r':
@@ -188,13 +187,8 @@ public class Lexer {
             System.out.println(getCurrCharThenNext());
         }
 
-        if (charMatch(' ') || charMatch(',') || charMatch('\n') || isAtEnd()){
-            System.out.println("number: "+  program.substring(start, current));
-            addToken(TokenType.INTEGER, Integer.parseInt(program.substring(start, current-1)));
-
-            if (!isAtEnd()){
-                current--;
-            }
+        if (isIdentifierChar(program.charAt(current))){
+            throw new LexerException("Unexpected identifier-like sequence after a number (" + program.substring(start, current) + ").", line);
         } else if (getNextChar() == '.'){
             getCurrCharThenNext();
 
@@ -202,15 +196,15 @@ public class Lexer {
                 getCurrCharThenNext();
             }
 
-            if (!isAtEnd() && !charMatch(' ') && !charMatch(',') && !charMatch('\n')){
+            if (isIdentifierChar(program.charAt(current))){
                 throw new UnexpectedTokenException(program.charAt(current) + "", "Expected a number for the fractional part.", line);
             }
 
             addToken(TokenType.DOUBLE, Double.parseDouble(program.substring(start, current)));
             System.out.println("DOUBLE" + program.substring(start, current));
-            current--;
         } else {
-            throw new LexerException("Unexpected identifier-like sequence after a number (" + program.substring(start, current) + ").", line);
+            System.out.println("number: "+  program.substring(start, current));
+            addToken(TokenType.INTEGER, Integer.parseInt(program.substring(start, current)));
         }
     }
 
@@ -226,12 +220,18 @@ public class Lexer {
     }
 
     // check if the current character matched the expected character
-    private boolean charMatch(char expected){
+    // if matched, current counter is incremented by 1
+    private boolean charMatch(char ...expected){
         if (isAtEnd()) return false;
-        if (program.charAt(current) != expected) return false;
 
-        current++;
-        return true;
+        for (char exp: expected){
+            if (program.charAt(current) == exp){
+                current++;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // function to check if the lexer is already at the end of the program ode
@@ -251,7 +251,8 @@ public class Lexer {
     // function to check if the previous token is a number
     // if number -> return false ; if not -> return true
     private boolean isUnaryToken(){
-        return (checkPrevToken() == TokenType.INTEGER || checkPrevToken() == TokenType.DOUBLE);
+        System.out.println("checkUnary: " + checkPrevToken());
+        return !(checkPrevToken() == TokenType.INTEGER || checkPrevToken() == TokenType.DOUBLE);
     }
     // function to check the recently added token type
     private TokenType checkPrevToken(){

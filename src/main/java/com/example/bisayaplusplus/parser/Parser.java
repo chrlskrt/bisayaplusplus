@@ -31,16 +31,8 @@ public class Parser {
         consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after 'SUGOD'");
 
         // go through all the tokens after SUGOD
-        try {
-            while (!isCurrTokenType(TokenType.END_STMT) || isAtEnd()){
-                parseDeclarations(statements);
-            }
-        } catch (Exception e){
-            if (e instanceof ParserException){
-                throw (ParserException) e;
-            }
-
-            System.err.println(e.getMessage());
+        while (!isCurrTokenType(TokenType.END_STMT) || isAtEnd()){
+            parseDeclarations(statements);
         }
 
         if (isCurrTokenType(TokenType.END_STMT)){
@@ -83,7 +75,7 @@ public class Parser {
         String dataType = switch (getCurrToken().getTokenType()) {
             case INT_TYPE -> "int";
             case BOOL_TYPE -> "boolean";
-            case CHAR_TYPE -> "char";
+            case CHAR_TYPE -> "character";
             case DOUBLE_TYPE -> "double";
             default ->
                     throw new ParserException("Expected DATA_TYPE after 'MUGNA', but received " + getCurrToken().getTokenType() + " ", getCurrToken().getLine());
@@ -100,7 +92,7 @@ public class Parser {
             if (matchToken(TokenType.EQUAL)){
                 System.out.println(name.getLiteral() + " has initialized value");
                 initializer = parseExpression();
-                System.out.println(name.getLiteral() + " is initialized with " + ((Expr.Literal) initializer).value);
+                System.out.println(name.getLiteral() + " is initialized with " + astPrinter.print(initializer));
             }
 
             varDeclarations.add(new Stmt.Var(dataType, name, initializer));
@@ -243,18 +235,18 @@ public class Parser {
         System.out.println("parsePrimary: " + getCurrToken().getLiteral() + getCurrToken().getTokenType());
         if (matchToken(TokenType.BOOL_FALSE, TokenType.BOOL_TRUE)) return new Expr.Literal("boolean", getPrevToken().getLiteral());
         if (matchToken(TokenType.NULL)) return new Expr.Literal("null", null);
-        if (matchToken(TokenType.CHARACTER)) return new Expr.Literal("char", getPrevToken().getLiteral());
+        if (matchToken(TokenType.CHARACTER)) return new Expr.Literal("character", getPrevToken().getLiteral());
         if (matchToken(TokenType.INTEGER)) return new Expr.Literal("int", getPrevToken().getLiteral());
         if (matchToken(TokenType.DOUBLE)) return new Expr.Literal("double", getPrevToken().getLiteral());
         if (matchToken(TokenType.STRING)) return new Expr.Literal("string", getPrevToken().getLiteral());
-        if (matchToken(TokenType.ESCAPE_CHAR)) return new Expr.Literal("char", getPrevToken().getLiteral());
+        if (matchToken(TokenType.ESCAPE_CHAR)) return new Expr.Literal("character", getPrevToken().getLiteral());
         if (matchToken(TokenType.IDENTIFIER)) return new Expr.Variable(getPrevToken());
         if (matchToken(TokenType.LEFT_PAREN)){
             Expr expr = parseExpression();
             consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after expression.");
             return new Expr.Grouping(expr);
         }
-        if (matchToken(TokenType.CNEW_LINE)) return new Expr.Literal("char", '\n');
+        if (matchToken(TokenType.CNEW_LINE)) return new Expr.Literal("character", '\n');
 
         Token token = getCurrToken();
         throw new ParserException("Expected expression not found. " +   ((token.getLiteral() == null ? token.getTokenType().toString() : token.getLiteral())), token.getLine());

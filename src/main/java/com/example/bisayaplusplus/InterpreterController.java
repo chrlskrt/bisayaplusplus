@@ -3,6 +3,7 @@ package com.example.bisayaplusplus;
 import com.example.bisayaplusplus.exception.LexerException;
 import com.example.bisayaplusplus.exception.ParserException;
 import com.example.bisayaplusplus.exception.RuntimeError;
+import com.example.bisayaplusplus.exception.TypeError;
 import com.example.bisayaplusplus.lexer.Lexer;
 import com.example.bisayaplusplus.lexer.Token;
 import com.example.bisayaplusplus.parser.Expr;
@@ -18,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public TextArea taInput;
@@ -76,10 +78,13 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         environment = new Environment();
 
         taOutput.appendText("OUTPUT:\n");
-        interpret(statements);
+        try {
+            interpret(statements);
+        } catch (Exception e){
+            taOutput.appendText("Runtime exception: " + e.getMessage());
+        }
 
         environment.print();
-
     }
 
     public void openFile(ActionEvent actionEvent) throws IOException {
@@ -138,6 +143,11 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
     public Object visitAssignExpr(Expr.Assign expr) {
         Object value = evaluate(expr.value);
         System.out.println("assign value: " + value.getClass());
+        String valueType = value.getClass().getSimpleName().toLowerCase();
+        String destType = environment.getType(expr.name).toString(); // class for the destination variable
+        if (!(destType.equals(valueType))){
+            throw new TypeError(expr.name,  valueType, expr.name.getLiteral().toString(), destType);
+        }
         environment.assign(expr.name, value);
         return value;
     }
@@ -149,27 +159,25 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         Object right = evaluate(expr.right);
 
         switch (expr.operator.getTokenType()){
-            case MINUS: return (double) left - (double) right;
+            case MINUS:
+                checkNumberOperands(expr.operator, left, right);
+                return ((Number) left).doubleValue() -  ((Number) right).doubleValue();
             case DIVIDE:
                 checkNumberOperands(expr.operator, left, right);
-                return (double) left /  (double) right;
+                return ((Number) left).doubleValue() /  ((Number) right).doubleValue();
             case MULTIPLY:
                 checkNumberOperands(expr.operator, left, right);
-                return (double) left * (double) right;
+                return ((Number) left).doubleValue() *  ((Number) right).doubleValue();
             case PLUS:
-                if (left instanceof Double && right instanceof Double){
-                    return (double)left + (double)right;
-                }
-
-                if (left instanceof Integer && right instanceof Integer){
-                    return (int)left + (int)right;
+                if (left instanceof Number && right instanceof Number){
+                    return ((Number) left).doubleValue() +  ((Number) right).doubleValue();
                 }
 
                 if (left instanceof String && right instanceof String){
                     return (String)left + (String) right;
                 }
 
-                throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.");
+                throw new RuntimeError(expr.operator, "Operands must be of the same data type.");
             case CONCAT: return left.toString() + right.toString();
             case GREATER_THAN:
                 checkNumberOperands(expr.operator, left, right);
@@ -184,8 +192,11 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
                 checkNumberOperands(expr.operator, left, right);
                 return (double)left <= (double)right;
             case NOT_EQUAL: return !(left == right);
-            case EQUAL: return (left == right);
+            case DOUBLE_EQUAL: return (left == right);
         }
+
+        // for arithmetic operators
+
 
         return null;
     }
@@ -207,10 +218,18 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         switch (expr.operator.getTokenType()){
             case NEGATIVE:
                 checkNumberOperand(expr.operator, right);
-                return -(double) right;
+                if (right instanceof Integer){
+                    return -(Integer) right;
+                } else if (right instanceof Double){
+                    return -(Double) right;
+                }
             case POSITIVE:
                 checkNumberOperand(expr.operator, right);
-                return +(double) right;
+                if (right instanceof Integer){
+                    return +(Integer) right;
+                } else if (right instanceof Double){
+                    return +(Double) right;
+                }
             case LOGIC_NOT:
                 return !isTruthy(right);
         }
@@ -239,7 +258,8 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
     }
 
     private void checkNumberOperands(Token operator, Object left, Object right){
-        if ((left instanceof Double && right instanceof Double) || (left instanceof Integer && right instanceof Integer)) return;
+//        if ((left instanceof Double && right instanceof Double) || (left instanceof Integer && right instanceof Integer)) return;
+        if (left instanceof Number && right instanceof Number) return;
         throw new RuntimeError(operator, "Operands must be numbers.");
     }
 
@@ -288,12 +308,35 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         Object value = null;
         if (stmt.initializer != null){
             value = evaluate(stmt.initializer);
-            System.out.println(stmt.dataType + " " + stmt.name + " = " + stmt.initializer);
+
+            final var valueDataType = getValueDataType(stmt, value);
+
+            if (valueDataType.equals("boolean")){
+                if ((boolean) value){
+                    value = "OO";
+                } else {
+                    value = "DILI";
+                }
+            }
         }
 
 
-
-        environment.define((String) stmt.name.getLiteral(), value);
+        environment.define((String) stmt.name.getLiteral(), stmt.dataType, value);
         return null;
+    }
+
+    private String getValueDataType(Stmt.Var stmt, Object value) {
+        String valueDataType;
+
+        if (stmt.initializer instanceof Expr.Literal){
+            valueDataType = ((Expr.Literal) stmt.initializer).dataType;
+        } else {
+            valueDataType = value.getClass().getSimpleName().toLowerCase();
+        }
+
+        if (!Objects.equals(stmt.dataType, valueDataType)){
+            throw new TypeError(stmt.name, valueDataType, stmt.name.getLiteral().toString(), stmt.dataType);
+        }
+        return valueDataType;
     }
 }
