@@ -292,6 +292,7 @@ public class Parser {
 
     // function for throwing errors
     private Token consumeToken(TokenType expectedType, String message) throws ParserException {
+        if (isAtEnd()) throw new ParserException("Expected 'KATAPUSAN' at the end of the program.", getPrevToken().getLine()+1);
         if (isCurrTokenType(expectedType)) return advance(); // if the token type matches, it will increment current counter
 
         // if the type does not match

@@ -146,6 +146,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         System.out.println("visitAssignExpr value datatype: " + expr.value.getClass());
         Object value = evaluate(expr.value);
         System.out.println("assign value: " + value.getClass() + " " + value);
+        String valueDataType = getValueDataType(expr.value, value);
         String destType = environment.getType(expr.name); // class for the destination variable
 
 //        if (!(destType.equals(valueType))){
@@ -168,7 +169,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
 //            }
 //        }
 
-        value = getAdjustedValue(expr.value, value, expr.name, destType);
+        value = getAdjustedValue(expr.value, value, expr.name, destType, valueDataType);
 
         environment.assign(expr.name, value);
         return value;
@@ -342,10 +343,10 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         if (stmt.initializer != null){
             value = evaluate(stmt.initializer);
 
-            final var valueDataType = getValueDataType(stmt, value);
+            final var valueDataType = getValueDataType(stmt.initializer, value);
             System.out.println(value + " : " + value.getClass() + valueDataType);
 
-            value = getAdjustedValue(stmt.initializer, value, stmt.name, stmt.dataType);
+            value = getAdjustedValue(stmt.initializer, value, stmt.name, stmt.dataType, valueDataType);
         }
 
         environment.define((String) stmt.name.getLiteral(), stmt.dataType, value);
@@ -354,14 +355,14 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
 
     /*
     * Returns the data type of the assigned value to a variable
-    * @param stmt      - the variable declaration statement e.g. DATATYPE IDENTIFIER = INITIALIZER (NUMERO C = 5)
+    * @param valueExpr - the initializer part of variable declaration or assignment declarations e.g. DATATYPE IDENTIFIER = INITIALIZER (NUMERO C = 5)
     * @param value     - evaluated value of the initializer. in example above, it would be 5
     */
-    private String getValueDataType(Stmt.Var stmt, Object value) {
+    private String getValueDataType(Expr valueExpr, Object value) {
         String valueDataType;
 
-        if (stmt.initializer instanceof Expr.Literal){
-            valueDataType = ((Expr.Literal) stmt.initializer).dataType;
+        if (valueExpr instanceof Expr.Literal){
+            valueDataType = ((Expr.Literal) valueExpr).dataType;
         } else {
             valueDataType = value.getClass().getSimpleName().toLowerCase();
         }
@@ -377,8 +378,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
     * @param variable        - the token representing the variable
     * @param varDataType     - declared data type of the variable
     */
-    private Object getAdjustedValue(Expr valueExpr, Object origValue, Token variable, String varDataType){
-        String valueDataType = origValue.getClass().getSimpleName().toLowerCase();
+    private Object getAdjustedValue(Expr valueExpr, Object origValue, Token variable, String varDataType, String valueDataType){
         Object value = origValue;
 
         if (varDataType.equals("double") && valueDataType.equals("integer")){
