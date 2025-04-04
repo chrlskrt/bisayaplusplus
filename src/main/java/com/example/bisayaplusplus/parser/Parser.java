@@ -270,6 +270,7 @@ public class Parser {
             return new Expr.Grouping(expr);
         }
         if (matchToken(TokenType.CNEW_LINE)) return new Expr.Literal("character", '\n');
+        if (matchToken(TokenType.NEW_LINE)) throw new ParserException("Expected new statement in line.", getPrevToken().getLine());
 
         Token token = getCurrToken();
         throw new ParserException("Expected expression not found. " +   ((token.getLiteral() == null ? token.getTokenType().toString() : token.getLiteral())), token.getLine());

@@ -12,6 +12,7 @@ import javafx.scene.control.TextArea;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -74,7 +75,7 @@ public class InterpreterController {
         FileChooser fileChooser = new FileChooser();
         // File to open will be filtered to .txt
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Text Files", "*.txt")
+                new FileChooser.ExtensionFilter("Text Files", "*.txt", "*.bpp")
         );
 
         // OpenDialog - choosing file
@@ -107,5 +108,29 @@ public class InterpreterController {
     // ux purposes
     void setStage(Stage stage){
         this.stage = stage;
+    }
+
+    public void saveFile(ActionEvent actionEvent) throws IOException {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Bisaya++ File");
+
+        // Set default file name
+        fileChooser.setInitialFileName("BisayaCode.bpp");
+
+        // set extension filter
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Bisaya++ Files", "*.bpp", "*.txt")
+        );
+
+        File file = fileChooser.showSaveDialog(stage);
+
+        if (file != null){
+            try (FileWriter writer = new FileWriter(file)){
+                writer.write(taInput.getText());
+                System.out.println("File saved to: " + file.getAbsolutePath());
+            } catch (IOException e){
+                taOutput.setText("Error saving file.");
+            }
+        }
     }
 }

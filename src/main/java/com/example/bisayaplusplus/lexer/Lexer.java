@@ -45,7 +45,7 @@ public class Lexer {
         this.program = program;
     }
 
-    public List<Token> scanTokens() throws IllegalCharacterException, UnexpectedTokenException, UnterminatedStringException, LexerException {
+    public List<Token> scanTokens() throws LexerException {
         while (!isAtEnd()){
             start = current;
             scanToken();
@@ -54,7 +54,7 @@ public class Lexer {
         return tokens;
     }
 
-    private void scanToken() throws LexerException, IllegalCharacterException, UnterminatedStringException, UnexpectedTokenException {
+    private void scanToken() throws LexerException {
         char c = getCurrCharThenNext();
 
         switch(c){
@@ -148,7 +148,9 @@ public class Lexer {
             return;
         }
 
-        if (type == TokenType.IF && charMatch(' ')){
+        // conditional - if-else
+        // control struc - for loop
+        if ((type == TokenType.IF || value.equals("ALANG")) && charMatch(' ')){
             int tempCurr = current-1;
             while (isIdentifierChar(getNextChar())){
                 getCurrCharThenNext();
@@ -169,11 +171,7 @@ public class Lexer {
 
     // function to check if the char kay valid siya sa identifier
     private boolean isIdentifierChar(char c){
-        if (Character.isLetter(c) || Character.isDigit(c) || c == '_'){
-            return true;
-        }
-
-        return false;
+        return Character.isLetter(c) || Character.isDigit(c) || c == '_';
     }
 
     // function to get literal string
@@ -202,7 +200,7 @@ public class Lexer {
     }
 
     // function get literal number
-    private void addTokenNumber() throws UnexpectedTokenException, LexerException {
+    private void addTokenNumber() throws LexerException {
         while (!isAtEnd() && Character.isDigit(getNextChar())){
             System.out.println(getCurrCharThenNext());
         }
