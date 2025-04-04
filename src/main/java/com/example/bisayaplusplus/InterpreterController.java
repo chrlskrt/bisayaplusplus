@@ -82,7 +82,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         try {
             interpret(statements);
         } catch (Exception e){
-            e.printStackTrace();
+//            e.printStackTrace();
             taOutput.appendText("Runtime exception: " + e.getMessage());
         }
 
@@ -145,11 +145,11 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
     public Object visitAssignExpr(Expr.Assign expr) {
         System.out.println("visitAssignExpr value datatype: " + expr.value.getClass());
         Object value = evaluate(expr.value);
-        System.out.println("assign value: " + value.getClass());
+        System.out.println("assign value: " + value.getClass() + " " + value);
         String valueType = value.getClass().getSimpleName().toLowerCase();
         String destType = environment.getType(expr.name); // class for the destination variable
         if (!(destType.equals(valueType))){
-            if (expr.value instanceof Expr.Literal){
+            if (expr.value instanceof Expr.Literal && !destType.equals("double")){
                 throw new TypeError(expr.name,  valueType, expr.name.getLiteral().toString(), destType);
             } else {
                 if (destType.equals("integer")){
@@ -186,6 +186,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
                 return ((Number) left).doubleValue() -  ((Number) right).doubleValue();
             case DIVIDE:
                 checkNumberOperands(expr.operator, left, right, "DIVISION");
+                System.out.println(6.6/2.2);
                 return ((Number) left).doubleValue() /  ((Number) right).doubleValue();
             case MULTIPLY:
                 checkNumberOperands(expr.operator, left, right, "MULTIPLICATION");
@@ -344,18 +345,18 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
             final var valueDataType = getValueDataType(stmt, value);
             System.out.println(value + " : " + value.getClass() + valueDataType);
 
-            if (!Objects.equals(stmt.dataType, valueDataType) && !(Objects.equals(stmt.dataType, "double"))){
-                throw new TypeError(stmt.name, valueDataType, stmt.name.getLiteral().toString(), stmt.dataType);
-            }
-
             if (Objects.equals(stmt.dataType, "double") && Objects.equals(valueDataType, "integer")){
                 value = ((Number) value).doubleValue();
+            } else if (Objects.equals(stmt.dataType, "integer") && Objects.equals(valueDataType, "double") && !(value instanceof Expr.Literal)){
+                value = ((Number) value).intValue();
             } else if (valueDataType.equals("boolean") && !(stmt.initializer instanceof Expr.Literal)){
                 if ((boolean) value){
                     value = "OO";
                 } else {
                     value = "DILI";
                 }
+            } else if (!Objects.equals(stmt.dataType, valueDataType)) {
+                throw new TypeError(stmt.name, valueDataType, stmt.name.getLiteral().toString(), stmt.dataType);
             }
         }
 
