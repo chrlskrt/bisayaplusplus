@@ -24,10 +24,10 @@ public class Lexer {
             put("IPAKITA", TokenType.PRINT_STMT);
             put("DAWAT", TokenType.READ_STMT);
 
-            put("NUMERO", TokenType.INT_TYPE);
-            put("LETRA", TokenType.CHAR_TYPE);
-            put("TIPIK", TokenType.DOUBLE_TYPE);
-            put("TINUOD", TokenType.BOOL_TYPE);
+            put("NUMERO", TokenType.INT_KEYWORD);
+            put("LETRA", TokenType.CHAR_KEYWORD);
+            put("TIPIK", TokenType.DOUBLE_KEYWORD);
+            put("TINUOD", TokenType.BOOL_KEYWORD);
 
             put("KUNG", TokenType.IF);
             put("KUNG DILI", TokenType.IF_ELSE);

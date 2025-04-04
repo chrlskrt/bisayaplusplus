@@ -146,29 +146,29 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         System.out.println("visitAssignExpr value datatype: " + expr.value.getClass());
         Object value = evaluate(expr.value);
         System.out.println("assign value: " + value.getClass() + " " + value);
-        String valueType = value.getClass().getSimpleName().toLowerCase();
         String destType = environment.getType(expr.name); // class for the destination variable
-        if (!(destType.equals(valueType))){
-            if (expr.value instanceof Expr.Literal && !destType.equals("double")){
-                throw new TypeError(expr.name,  valueType, expr.name.getLiteral().toString(), destType);
-            } else {
-                if (destType.equals("integer")){
-                    value = ((Number) value).intValue();
-                } else if (destType.equals("double")){
-                    value = ((Number) value).doubleValue();
-                } else if (destType.equals("string")){
-                    value = ((Number) value).toString();
-                }
-            }
-        } else {
-            if (valueType.equals("boolean")){
-                if ((boolean) value){
-                    value = "OO";
-                } else {
-                    value = "DILI";
-                }
-            }
-        }
+
+//        if (!(destType.equals(valueType))){
+//            if (expr.value instanceof Expr.Literal && !destType.equals("double")){
+//                throw new TypeError(expr.name,  valueType, expr.name.getLiteral().toString(), destType);
+//            } else {
+//                // if the value is a result of an expression, or if it is a literal with a destType of double
+//                value = switch (destType) {
+//                    case "integer" -> ((Number) value).intValue();
+//                    case "double" -> ((Number) value).doubleValue();
+//                    case "string" -> value.toString();
+//                    default -> value;
+//                };
+//            }
+//        } else if (valueType.equals("boolean")){
+//            if ((boolean) value){
+//                value = "OO";
+//            } else {
+//                value = "DILI";
+//            }
+//        }
+
+        value = getAdjustedValue(expr.value, value, expr.name, destType);
 
         environment.assign(expr.name, value);
         return value;
@@ -345,26 +345,18 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
             final var valueDataType = getValueDataType(stmt, value);
             System.out.println(value + " : " + value.getClass() + valueDataType);
 
-            if (Objects.equals(stmt.dataType, "double") && Objects.equals(valueDataType, "integer")){
-                value = ((Number) value).doubleValue();
-            } else if (Objects.equals(stmt.dataType, "integer") && Objects.equals(valueDataType, "double") && !(value instanceof Expr.Literal)){
-                value = ((Number) value).intValue();
-            } else if (valueDataType.equals("boolean") && !(stmt.initializer instanceof Expr.Literal)){
-                if ((boolean) value){
-                    value = "OO";
-                } else {
-                    value = "DILI";
-                }
-            } else if (!Objects.equals(stmt.dataType, valueDataType)) {
-                throw new TypeError(stmt.name, valueDataType, stmt.name.getLiteral().toString(), stmt.dataType);
-            }
+            value = getAdjustedValue(stmt.initializer, value, stmt.name, stmt.dataType);
         }
-
 
         environment.define((String) stmt.name.getLiteral(), stmt.dataType, value);
         return null;
     }
 
+    /*
+    * Returns the data type of the assigned value to a variable
+    * @param stmt      - the variable declaration statement e.g. DATATYPE IDENTIFIER = INITIALIZER (NUMERO C = 5)
+    * @param value     - evaluated value of the initializer. in example above, it would be 5
+    */
     private String getValueDataType(Stmt.Var stmt, Object value) {
         String valueDataType;
 
@@ -375,5 +367,34 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
         }
 
         return valueDataType;
+    }
+
+    /*
+    * Returns the adjusted value to be assigned to a variable based on its declared data type.
+    * Throws a TypeError if the value's type is incompatible with the variable's declared type.
+    * @param valueExpr       - the expression representing the value to assign e.g. (4+5), 5
+    * @param origValue       - original evaluated value of the expression
+    * @param variable        - the token representing the variable
+    * @param varDataType     - declared data type of the variable
+    */
+    private Object getAdjustedValue(Expr valueExpr, Object origValue, Token variable, String varDataType){
+        String valueDataType = origValue.getClass().getSimpleName().toLowerCase();
+        Object value = origValue;
+
+        if (varDataType.equals("double") && valueDataType.equals("integer")){
+            value = ((Number) origValue).doubleValue();
+        } else if (varDataType.equals("integer") && valueDataType.equals("double") && !(valueExpr instanceof Expr.Literal)){
+            value = ((Number) origValue).intValue();
+        } else if (valueDataType.equals("boolean") && !(valueExpr instanceof Expr.Literal)){
+            if ((boolean) origValue){
+                value = "OO";
+            } else {
+                value = "DILI";
+            }
+        } else if (!varDataType.equals(valueDataType)) {
+            throw new TypeError(variable, valueDataType, variable.getLiteral().toString(), varDataType);
+        }
+
+        return value;
     }
 }

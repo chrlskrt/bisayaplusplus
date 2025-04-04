@@ -30,7 +30,7 @@ public class Parser {
         consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after 'SUGOD'");
 
         // go through all the tokens after SUGOD
-        while (!isCurrTokenType(TokenType.END_STMT) || isAtEnd()){
+        while (!isCurrTokenType(TokenType.END_STMT) && !isAtEnd()){
             parseDeclarations(statements);
         }
 
@@ -72,12 +72,12 @@ public class Parser {
     // variable declaration
     private List<Stmt> parseVarDeclaration() throws ParserException {
         String dataType = switch (getCurrToken().getTokenType()) {
-            case INT_TYPE -> "integer";
-            case BOOL_TYPE -> "boolean";
-            case CHAR_TYPE -> "character";
-            case DOUBLE_TYPE -> "double";
+            case INT_KEYWORD -> "integer";
+            case BOOL_KEYWORD -> "boolean";
+            case CHAR_KEYWORD -> "character";
+            case DOUBLE_KEYWORD -> "double";
             default ->
-                    throw new ParserException("Expected DATA_TYPE after 'MUGNA', but received " + getCurrToken().getTokenType() + " ", getCurrToken().getLine());
+                    throw new ParserException("Expected DATA_TYPE after 'MUGNA', but received " + getCurrToken().getTokenType() + " \"" + getCurrToken().getLiteral() + "\"", getCurrToken().getLine());
         };
 
         advance(); // consume data type
@@ -292,14 +292,13 @@ public class Parser {
 
     // function for throwing errors
     private Token consumeToken(TokenType expectedType, String message) throws ParserException {
-        if (isAtEnd()) throw new ParserException("Expected 'KATAPUSAN' at the end of the program.", getPrevToken().getLine() + 1);
         if (isCurrTokenType(expectedType)) return advance(); // if the token type matches, it will increment current counter
 
         // if the type does not match
         Token token = getCurrToken();
 
         // throws exception. it gives the message and the token that was found instead of the expected tokentype
-        throw new ParserException(message + " " + ((token.getLiteral()) == null ? token.getTokenType().toString() : token.getLiteral()), token.getLine());
+        throw new ParserException(message + "Received: " + ((token.getLiteral()) == null ? token.getTokenType().toString() : token.getLiteral()), token.getLine());
     }
 
     // checks if the current expr has any of those token types
@@ -329,6 +328,7 @@ public class Parser {
 
     // get next token wo incrementing the current counter
     private Token getCurrToken() {
+
         return tokens.get(current);
     }
 
