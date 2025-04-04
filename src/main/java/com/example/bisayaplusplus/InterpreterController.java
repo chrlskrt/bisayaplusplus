@@ -6,6 +6,7 @@ import com.example.bisayaplusplus.exception.RuntimeError;
 import com.example.bisayaplusplus.exception.TypeError;
 import com.example.bisayaplusplus.lexer.Lexer;
 import com.example.bisayaplusplus.lexer.Token;
+import com.example.bisayaplusplus.lexer.TokenType;
 import com.example.bisayaplusplus.parser.Expr;
 import com.example.bisayaplusplus.parser.Parser;
 import com.example.bisayaplusplus.parser.Stmt;
@@ -142,6 +143,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
 
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
+        System.out.println("visitAssignExpr value datatype: " + expr.value.getClass());
         Object value = evaluate(expr.value);
         System.out.println("assign value: " + value.getClass());
         String valueType = value.getClass().getSimpleName().toLowerCase();
@@ -215,9 +217,6 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
             case DOUBLE_EQUAL: return (left == right);
         }
 
-        // for arithmetic operators
-
-
         return null;
     }
 
@@ -229,6 +228,19 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
     @Override
     public Object visitLiteralExpr(Expr.Literal expr) {
         return expr.value;
+    }
+
+    @Override
+    public Object visitLogicalExpr(Expr.Logical expr) {
+        Object left = evaluate(expr.left);
+
+        if ((expr.operator).getTokenType() == TokenType.LOGIC_OR){
+            if (isTruthy(left)) return left;
+        } else {
+            if (!isTruthy(left)) return left;
+        }
+
+        return evaluate(expr.right);
     }
 
     @Override
@@ -280,7 +292,7 @@ public class InterpreterController implements Expr.Visitor<Object>, Stmt.Visitor
     private void checkNumberOperands(Token operator, Object left, Object right, String message){
 //        if ((left instanceof Double && right instanceof Double) || (left instanceof Integer && right instanceof Integer)) return;
         if (left instanceof Number && right instanceof Number) return;
-        throw new RuntimeError(operator, message + ": Operands must be numbers.");
+        throw new RuntimeError(operator, message + ": Operands must be numbers. " + left + " = " + left.getClass() + " ; " + right + " = " + right.getClass());
     }
 
     // INTERPRETING STATEMENTS

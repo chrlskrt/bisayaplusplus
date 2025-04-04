@@ -30,10 +30,14 @@ public class Lexer {
             put("TINUOD", TokenType.BOOL_TYPE);
 
             put("KUNG", TokenType.IF);
-            put("DILI", TokenType.IF_ELSE);
-            put("WALA", TokenType.ELSE);
+            put("KUNG DILI", TokenType.IF_ELSE);
+            put("KUNG WALA", TokenType.ELSE);
             put("PUNDOK", TokenType.CODE_BLOCK);
             put("ALANG SA", TokenType.FOR_LOOP);
+
+            put("O", TokenType.LOGIC_OR);
+            put("DILI", TokenType.LOGIC_NOT);
+            put("UG", TokenType.LOGIC_AND);
         }
     };
 
@@ -137,14 +141,30 @@ public class Lexer {
         }
 
         String value = program.substring(start, current);
-        TokenType type = keywords.get(value.toUpperCase());
+        TokenType type = keywords.get(value);
 
         if (type == null){
             addToken(TokenType.IDENTIFIER, value);
+            return;
         }
-        else {
-            addToken(type);
+
+        if (type == TokenType.IF && charMatch(' ')){
+            int tempCurr = current-1;
+            while (isIdentifierChar(getNextChar())){
+                getCurrCharThenNext();
+            }
+
+            String newVal = program.substring(start, current);
+            TokenType newType = keywords.get(newVal);
+
+            if (newType == null){
+                current = tempCurr;
+            } else {
+                type = newType;
+            }
         }
+
+        addToken(type);
     }
 
     // function to check if the char kay valid siya sa identifier

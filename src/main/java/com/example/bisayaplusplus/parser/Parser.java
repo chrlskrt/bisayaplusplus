@@ -153,7 +153,7 @@ public class Parser {
 
     // check assigning variable value
     private Expr parseAssignment() throws ParserException {
-        Expr expr = parseEquality();
+        Expr expr = parseLogicalOR();
 
         if (matchToken(TokenType.EQUAL)){
             System.out.println("Assignment");
@@ -163,11 +163,35 @@ public class Parser {
             if (expr instanceof Expr.Variable){
                 Token name = ((Expr.Variable) expr).name;
                 System.out.println(name);
-                System.out.println(value);
+                astPrinter.print(value);
                 return new Expr.Assign(name, value);
             }
 
             throw new ParserException("Invalid assignment target", equals.getLine());
+        }
+
+        return expr;
+    }
+
+    private Expr parseLogicalOR() throws ParserException {
+        Expr expr = parseLogicalAND();
+
+        while (matchToken(TokenType.LOGIC_OR)){
+            Token operator = getPrevToken();
+            Expr right = parseLogicalAND();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private Expr parseLogicalAND() throws ParserException {
+        Expr expr = parseEquality();
+
+        while (matchToken(TokenType.LOGIC_AND)){
+            Token operator = getPrevToken();
+            Expr right = parseEquality();
+            expr = new Expr.Logical(expr, operator, right);
         }
 
         return expr;
@@ -200,7 +224,7 @@ public class Parser {
     private Expr parseTerm() throws ParserException {
         Expr expr = parseFactor();
 
-        while (matchToken(TokenType.MINUS, TokenType.PLUS, TokenType.CONCAT, TokenType.LOGIC_OR)) {
+        while (matchToken(TokenType.MINUS, TokenType.PLUS, TokenType.CONCAT)) {
             Token operator = getPrevToken();
             Expr right = parseFactor();
             expr = new Expr.Binary(expr, operator, right);
@@ -212,7 +236,7 @@ public class Parser {
     private Expr parseFactor() throws ParserException {
         Expr expr = parseUnary();
 
-        while (matchToken(TokenType.DIVIDE, TokenType.MULTIPLY, TokenType.MODULO, TokenType.LOGIC_AND)) {
+        while (matchToken(TokenType.DIVIDE, TokenType.MULTIPLY, TokenType.MODULO)) {
             Token operator = getPrevToken();
             Expr right = parseUnary();
             expr = new Expr.Binary(expr, operator, right);

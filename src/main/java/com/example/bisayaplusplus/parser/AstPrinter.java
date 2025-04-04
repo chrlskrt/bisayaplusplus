@@ -14,7 +14,7 @@ public class AstPrinter implements Expr.Visitor<String>{
 
     @Override
     public String visitBinaryExpr(Expr.Binary expr) {
-        return parenthesize((expr.operator.getLiteral() != null) ? (String)expr.operator.getLiteral() : expr.operator.getTokenType().toString(), expr.left, expr.right);
+        return parenthesize((expr.operator).getTokenType().toString(), expr.left, expr.right);
     }
 
     @Override
@@ -26,6 +26,11 @@ public class AstPrinter implements Expr.Visitor<String>{
     public String visitLiteralExpr(Expr.Literal expr) {
         if (expr.value == null ) return null;
         return expr.value.toString();
+    }
+
+    @Override
+    public String visitLogicalExpr(Expr.Logical expr) {
+        return parenthesize(expr.operator.getTokenType().toString(), expr.left, expr.right);
     }
 
     @Override
