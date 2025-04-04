@@ -73,7 +73,7 @@ public class Parser {
     // variable declaration
     private List<Stmt> parseVarDeclaration() throws ParserException {
         String dataType = switch (getCurrToken().getTokenType()) {
-            case INT_TYPE -> "int";
+            case INT_TYPE -> "integer";
             case BOOL_TYPE -> "boolean";
             case CHAR_TYPE -> "character";
             case DOUBLE_TYPE -> "double";
@@ -236,7 +236,7 @@ public class Parser {
         if (matchToken(TokenType.BOOL_FALSE, TokenType.BOOL_TRUE)) return new Expr.Literal("boolean", getPrevToken().getLiteral());
         if (matchToken(TokenType.NULL)) return new Expr.Literal("null", null);
         if (matchToken(TokenType.CHARACTER)) return new Expr.Literal("character", getPrevToken().getLiteral());
-        if (matchToken(TokenType.INTEGER)) return new Expr.Literal("int", getPrevToken().getLiteral());
+        if (matchToken(TokenType.INTEGER)) return new Expr.Literal("integer", getPrevToken().getLiteral());
         if (matchToken(TokenType.DOUBLE)) return new Expr.Literal("double", getPrevToken().getLiteral());
         if (matchToken(TokenType.STRING)) return new Expr.Literal("string", getPrevToken().getLiteral());
         if (matchToken(TokenType.ESCAPE_CHAR)) return new Expr.Literal("character", getPrevToken().getLiteral());

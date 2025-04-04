@@ -33,12 +33,12 @@ public class Environment {
         throw new RuntimeError(name, "Undefined variable '" + name.getLiteral() + "'.");
     }
 
-    public Object getType(Token name){
+    public String getType(Token name){
         if (dataTypes.containsKey(name.getLiteral())){
             return dataTypes.get(name.getLiteral());
         };
 
-        if (enclosing != null) return enclosing.get(name);
+        if (enclosing != null) return (String) enclosing.get(name);
 
         throw new RuntimeError(name, "Undefined variable '" + name.getLiteral() + "'.");
     }
