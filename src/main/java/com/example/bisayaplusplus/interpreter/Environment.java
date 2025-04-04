@@ -1,4 +1,4 @@
-package com.example.bisayaplusplus;
+package com.example.bisayaplusplus.interpreter;
 
 import com.example.bisayaplusplus.exception.RuntimeError;
 import com.example.bisayaplusplus.lexer.Token;
