@@ -81,8 +81,15 @@ public class Lexer {
                 break;
             case '=': addToken(charMatch('=') ? TokenType.DOUBLE_EQUAL : TokenType.EQUAL); break;
             case '>': addToken(charMatch('=') ? TokenType.GREATER_OR_EQUAL : TokenType.GREATER_THAN); break;
-            case '<': addToken(charMatch('=') ? TokenType.LESSER_OR_EQUAL : charMatch('>') ? TokenType.NOT_EQUAL : TokenType.LESSER_THAN);break;
-
+            case '<':
+                if (charMatch('=')){
+                    addToken(TokenType.LESSER_OR_EQUAL);
+                } else if (charMatch('>')){
+                    addToken(TokenType.NOT_EQUAL);
+                } else {
+                    addToken(TokenType.LESSER_THAN);
+                }
+                break;
             // PROGRAM - SPECIAL CHAR
             case '$': addToken(TokenType.CNEW_LINE);break;
             case '&': addToken(TokenType.CONCAT); break;
@@ -199,7 +206,7 @@ public class Lexer {
         }
     }
 
-    // function get literal number
+    // function to get literal number
     private void addTokenNumber() throws LexerException {
         while (!isAtEnd() && Character.isDigit(getNextChar())){
             System.out.println(getCurrCharThenNext());
@@ -226,7 +233,7 @@ public class Lexer {
         }
     }
 
-    // function to add character
+    // function to add character literal
     private void addTokenChar() throws UnexpectedTokenException {
         addToken(TokenType.CHARACTER, getCurrCharThenNext());
 
@@ -237,7 +244,7 @@ public class Lexer {
         getCurrCharThenNext();
     }
 
-    // check if the current character matched the expected character
+    // checks if the current character matched the expected character
     // if matched, current counter is incremented by 1
     private boolean charMatch(char ...expected){
         if (isAtEnd()) return false;
