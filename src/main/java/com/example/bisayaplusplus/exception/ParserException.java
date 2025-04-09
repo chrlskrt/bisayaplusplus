@@ -1,5 +1,7 @@
 package com.example.bisayaplusplus.exception;
 
+import com.example.bisayaplusplus.lexer.Token;
+
 public class ParserException extends Exception{
     public String errMessage;
     public int line;
@@ -9,6 +11,6 @@ public class ParserException extends Exception{
     }
     @Override
     public String getMessage() {
-        return "Parser error: Line " + line + ": " + errMessage;
+        return "[line " + line + "] Parser error: " + errMessage;
     }
 }

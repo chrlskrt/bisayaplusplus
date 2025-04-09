@@ -13,6 +13,6 @@ public class LexerException extends Exception {
 
     @Override
     public String getMessage() {
-        return "Lexer exception: " + line + " : " + message + " ";
+        return "[line " + line + "] Lexer exception: " + message;
     }
 }

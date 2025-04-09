@@ -12,6 +12,6 @@ public class RuntimeError extends RuntimeException{
 
     @Override
     public String getMessage() {
-        return "Runtime Error: " + super.getMessage() + " at line " + token.getLine();
+        return "[line " + token.getLine() + "] Runtime Error: " + super.getMessage();
     }
 }

@@ -16,7 +16,7 @@ public class TypeError extends RuntimeException{
 
     @Override
     public String getMessage() {
-        return "TypeError: Line " + token.getLine() + ": Cannot assign value of type '" + valueDataType + "'" +
+        return "[line " + token.getLine() + "] TypeError: Cannot assign value of type '" + valueDataType + "'" +
         " to the variable '" + varName + "' of type '" + varDataType + "'";
     }
 }

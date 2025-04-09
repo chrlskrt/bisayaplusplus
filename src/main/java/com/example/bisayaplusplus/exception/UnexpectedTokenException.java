@@ -9,6 +9,6 @@ public class UnexpectedTokenException extends LexerException {
 
     @Override
     public String getMessage() {
-        return "Lexer exception: Unexpected token \"" + super.message + "\" at line " + line + ". " + message;
+        return "[line " + line + "] Lexer exception: Unexpected token \"" + super.message + "\". " + message;
     }
 }

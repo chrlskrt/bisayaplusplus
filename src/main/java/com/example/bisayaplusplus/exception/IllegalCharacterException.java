@@ -7,7 +7,7 @@ public class IllegalCharacterException extends LexerException {
 
     @Override
     public String getMessage() {
-        return "Lexer exception: Illegal character \"" + message + "\" at line " + line + ".";
+        return "[line " + line + "] Lexer exception: Illegal character \"" + message + "\".";
     }
 }
 
