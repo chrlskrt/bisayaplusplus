@@ -27,17 +27,19 @@ public class Parser {
             throw new ParserException("Expected 'SUGOD' at the start of the program.", getCurrToken().getLine());
         }
 
-        // there should be a new_line after SUGOD
-        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after 'SUGOD'");
+        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after 'SUGOD''", true);
 
+        String typeStmt = "";
         // go through all the tokens after SUGOD
-        while (!isCurrTokenType(TokenType.END_STMT) && !isAtEnd()){
-            parseStatements(statements);
+        while (!matchToken(TokenType.END_STMT) && !isAtEnd()){
+            typeStmt = parseStatements(statements);
+
+            if (!typeStmt.equals("IF")){
+                consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after a statement. 1 statement per line.", true);
+            }
         }
 
-        if (isCurrTokenType(TokenType.END_STMT)){
-            advance(); // consume KATAPUSAN keyword
-        } else {
+        if (isAtEnd() && getPrevToken().getTokenType() != TokenType.END_STMT){
             throw new ParserException("Expected 'KATAPUSAN' at the end of the program.", getPrevToken().getLine() + 1);
         }
 
@@ -59,26 +61,27 @@ public class Parser {
     }
 
     // function for declaration statement
-    private void parseStatements(List<Stmt> statements) throws ParserException {
+    private String parseStatements(List<Stmt> statements) throws ParserException {
         // Variable declarations
         if (matchToken(TokenType.CREATE_STMT)) {
             statements.addAll(parseVarDeclaration());
-            return;
+            return "CREATE";
         }
 
         // Print statement
         if (matchToken(TokenType.PRINT_STMT)){
             statements.add(parsePrintStatement());
-            return;
+            return "PRINT";
         }
 
         // If statement
         if (matchToken(TokenType.IF)) {
             statements.add(parseIfStmt());
-            return;
+            return "IF";
         }
 
         statements.add(parseExprStatement());
+        return "EXPR";
     }
 
     // variable declaration
@@ -96,8 +99,22 @@ public class Parser {
 
         List<Stmt> varDeclarations = new ArrayList<>();
 
-        while (!isCurrTokenType(TokenType.NEW_LINE)){
-            Token name = consumeToken(TokenType.IDENTIFIER, "Expected IDENTIFIER after DATA_TYPE / COMMA.");
+//        while (!isAtEnd() && !isCurrTokenType(TokenType.NEW_LINE)){
+//            Token name = consumeToken(TokenType.IDENTIFIER, "Expected IDENTIFIER after DATA_TYPE / COMMA.");
+//            Expr initializer = null;
+//            if (matchToken(TokenType.EQUAL)){
+//                System.out.println(name.getLiteral() + " has initialized value");
+//                initializer = parseExpression();
+//                System.out.println(name.getLiteral() + " is initialized with " + astPrinter.print(initializer));
+//            }
+//
+//            varDeclarations.add(new Stmt.Var(dataType, name, initializer));
+//
+//            System.out.println(getCurrToken());
+//            if (isCurrTokenType(TokenType.COMMA)) advance();
+//        }
+        do {
+            Token name = consumeToken(TokenType.IDENTIFIER, "Expected IDENTIFIER after DATA_TYPE / COMMA.", false);
             Expr initializer = null;
             if (matchToken(TokenType.EQUAL)){
                 System.out.println(name.getLiteral() + " has initialized value");
@@ -106,25 +123,21 @@ public class Parser {
             }
 
             varDeclarations.add(new Stmt.Var(dataType, name, initializer));
+        } while (matchToken(TokenType.COMMA));
 
-            System.out.println(getCurrToken());
-            if (isCurrTokenType(TokenType.COMMA)) advance();
-        }
-
-        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after variable declaration.");
         return varDeclarations;
     }
 
     private Stmt parseIfStmt() throws ParserException {
         System.out.println("parsing if statement");
-        consumeToken(TokenType.LEFT_PAREN, "Expected '(' after IF keyword.");
+        consumeToken(TokenType.LEFT_PAREN, "Expected '(' after IF keyword.", false);
         System.out.println("parsing condition");
         Expr condition = parseExpression();
         checkIFConditions(condition);
         System.out.println("consuming right paren");
-        consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after the IF condition.");
+        consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after the IF condition.", false);
         System.out.println("consuming new line");
-        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after the IF statement. Only 1 statement per line.");
+        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after the IF statement. To parse PUNDOK for IF.", false);
 
         // for if block statements
         Stmt thenBranch = new Stmt.Block(parseBlock("IF BLOCK"));
@@ -135,10 +148,10 @@ public class Parser {
             elseIfBranch = new ArrayList<>();
             do {
                 // getting condition
-                consumeToken(TokenType.LEFT_PAREN, "Expected '(' after ELSE_IF keyword.");
+                consumeToken(TokenType.LEFT_PAREN, "Expected '(' after ELSE_IF keyword.", false);
                 Expr elIfCondition = parseLogicalOR();
-                consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after the ELSE_IF condition.");
-                consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after the ELSE_IF statement. Only 1 statement per line.");
+                consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after the ELSE_IF condition.", false);
+                consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after the ELSE_IF statement. Only 1 statement per line.", false);
 
                 // storing and getting executable statements under el-if block
                 elseIfBranch.add(new Stmt.ElseIf(elIfCondition, new Stmt.Block(parseBlock("ELSE-IF-"+(elseIfBranch.size() + 1)))));
@@ -146,7 +159,7 @@ public class Parser {
         }
 
         if (matchToken(TokenType.ELSE)){
-            consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after ELSE statement. Only 1 statement per line.");
+            consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after ELSE statement. Only 1 statement per line.", false);
             elseBranch = new Stmt.Block(parseBlock("ELSE BLOCK"));
         }
 
@@ -176,24 +189,26 @@ public class Parser {
     * IPAKITA: {EXPR}
     */
     private Stmt parsePrintStatement() throws ParserException {
-        consumeToken(TokenType.COLON, "Expect ':' after IPAKITA statement.");
+        consumeToken(TokenType.COLON, "Expect ':' after IPAKITA statement.", false);
         Expr value = parseExpression();
         System.out.println("the value for print: " + astPrinter.print(value));
-        consumeToken(TokenType.NEW_LINE, "Expect NEWLINE after value.");
         return new Stmt.Print(value);
     }
 
     // for code blocks - code sulod sa PUNDOK {}
     private List<Stmt> parseBlock(String blockName) throws ParserException {
-        consumeToken(TokenType.CODE_BLOCK, "Expected 'PUNDOK' statement for the " + blockName + " block.");
+        consumeToken(TokenType.CODE_BLOCK, "Expected 'PUNDOK' statement for the " + blockName + " block.", false);
         List<Stmt> blockStatements = new ArrayList<>();
-        consumeToken(TokenType.LEFT_CURLY, "Expect '{' after PUNDOK statement. Code block: " + blockName);
-        consumeToken(TokenType.NEW_LINE, "Expect NEW_LINE after '{' in PUNDOK statement.");
+        consumeToken(TokenType.LEFT_CURLY, "Expect '{' after PUNDOK statement. Code block: " + blockName, false);
+        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after '{' in PUNDOK statement.", false);
+
         while (!isCurrTokenType(TokenType.RIGHT_CURLY) && !isAtEnd()){
             parseStatements(blockStatements);
+            consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after a statement inside PUNDOK", false);
         }
-        consumeToken(TokenType.RIGHT_CURLY, "Expect '}' after block. Code block: " + blockName);
-        consumeToken(TokenType.NEW_LINE, "Expect NEW_LINE code statements in PUNDOK");
+
+        consumeToken(TokenType.RIGHT_CURLY, "Expected '}' after block. Code block: " + blockName, false);
+        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after PUNDOK for " + blockName + " block.", true);
         return blockStatements;
     }
 
@@ -203,7 +218,6 @@ public class Parser {
         if (!(expr instanceof Expr.Assign)){
             throw new ParserException("Invalid statement.", getPrevToken().getLine());
         }
-        consumeToken(TokenType.NEW_LINE, "Expect '\n' after the expression");
         return new Stmt.Expression(expr);
     }
 
@@ -342,7 +356,7 @@ public class Parser {
         if (matchToken(TokenType.IDENTIFIER)) return new Expr.Variable(getPrevToken());
         if (matchToken(TokenType.LEFT_PAREN)){
             Expr expr = parseExpression();
-            consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after expression.");
+            consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after expression.", false);
             System.out.println("return grouping");
             return new Expr.Grouping(expr);
         }
@@ -373,8 +387,13 @@ public class Parser {
     }
 
     // function for throwing errors
-    private Token consumeToken(TokenType expectedType, String message) throws ParserException {
-        if (isAtEnd()) throw new ParserException("Expected 'KATAPUSAN' at the end of the program.", getPrevToken().getLine()+1);
+    private Token consumeToken(TokenType expectedType, String message, boolean isEndOfStmt) throws ParserException {
+        if (isAtEnd() && !isEndOfStmt) {
+            throw new ParserException("Unexpected EOF while parsing. " + message, getPrevToken().getLine());
+        } else if (isAtEnd() && isEndOfStmt && expectedType == TokenType.NEW_LINE){
+            throw new ParserException("Expected 'KATAPUSAN' at end of program.", getPrevToken().getLine() + 1);
+        }
+
         if (isCurrTokenType(expectedType)) return advance(); // if the token type matches, it will increment current counter
 
         // if the type does not match
