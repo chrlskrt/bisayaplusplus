@@ -22,7 +22,8 @@ public class GenerateAst {
                 "Literal   : String dataType, Object value",
                 "Logical   : Expr left, Token operator, Expr right",
                 "Unary     : Token operator, Expr right",
-                "Variable  : Token name"
+                "Variable  : Token name",
+                "IncrementOrDecrement : Token operator, Variable var, boolean isPrefix"
         ));
 
         defineAst(outputDir, "Stmt", Arrays.asList(
@@ -65,12 +66,18 @@ public class GenerateAst {
 
     private static void defineType(PrintWriter writer, String baseName, String className, String fieldList){
         writer.println(" public static class " + className + " extends " + baseName + "{");
+        // store parameters infields
+        String[] fields = fieldList.split(", ");
+
+        // Fields.
+        writer.println();
+        for (String field : fields) {
+            writer.println("    public final " + field + ";");
+        }
 
         // constructor
         writer.println("    public " + className + " (" + fieldList + "){");
 
-        // store parameters infields
-        String[] fields = fieldList.split(", ");
         for (String field: fields){
             String name = field.split(" ")[1];
             writer.println("      this." + name + " = " + name + ";");
@@ -85,12 +92,6 @@ public class GenerateAst {
         writer.println("      return visitor.visit" +
                 className + baseName + "(this);");
         writer.println("    }");
-
-        // Fields.
-        writer.println();
-        for (String field : fields) {
-            writer.println("    public final " + field + ";");
-        }
 
         writer.println("  }");
     }

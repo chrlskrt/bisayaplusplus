@@ -3,7 +3,7 @@ package com.example.bisayaplusplus.lexer;
 public enum TokenType {
     // SINGLE CHARACTER
     LEFT_CURLY, RIGHT_CURLY, LEFT_PAREN, RIGHT_PAREN, UNDERSCORE,
-    COLON, HASHTAG, COMMA,
+    COLON, COMMA,
     // operators
     NEGATIVE, POSITIVE,
     PLUS, MINUS, MULTIPLY, DIVIDE, EQUAL,
@@ -11,7 +11,7 @@ public enum TokenType {
 
     // DOUBLE CHARACTER
     DOUBLE_EQUAL, NOT_EQUAL, GREATER_OR_EQUAL, LESSER_OR_EQUAL,
-    DOUBLE_MINUS,
+    DECREMENT, INCREMENT,
 
     // LITERALS
     IDENTIFIER, STRING, INTEGER, DOUBLE,
@@ -32,5 +32,5 @@ public enum TokenType {
     IF, IF_ELSE, ELSE, FOR_LOOP, CODE_BLOCK,
 
     // special character
-    NEW_LINE, CONCAT, CNEW_LINE,
+    NEW_LINE, CONCAT, CNEW_LINE, COMMENT
 }

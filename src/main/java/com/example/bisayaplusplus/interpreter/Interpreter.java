@@ -43,26 +43,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         String valueDataType = getValueDataType(expr.value, value);
         String destType = environment.getType(expr.name); // class for the destination variable
 
-//        if (!(destType.equals(valueType))){
-//            if (expr.value instanceof Expr.Literal && !destType.equals("double")){
-//                throw new TypeError(expr.name,  valueType, expr.name.getLiteral().toString(), destType);
-//            } else {
-//                // if the value is a result of an expression, or if it is a literal with a destType of double
-//                value = switch (destType) {
-//                    case "integer" -> ((Number) value).intValue();
-//                    case "double" -> ((Number) value).doubleValue();
-//                    case "string" -> value.toString();
-//                    default -> value;
-//                };
-//            }
-//        } else if (valueType.equals("boolean")){
-//            if ((boolean) value){
-//                value = "OO";
-//            } else {
-//                value = "DILI";
-//            }
-//        }
-
         value = getAdjustedValue(expr.value, value, expr.name, destType, valueDataType);
 
         environment.assign(expr.name, value);
@@ -173,6 +153,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         return environment.get(expr.name);
     }
 
+    @Override
+    public Object visitIncrementOrDecrementExpr(Expr.IncrementOrDecrement expr) {
+        Token variable = ((Expr.Variable) expr.var).name;
+        Object value = environment.get(variable);
+        int delta = (expr.operator.getTokenType() == TokenType.INCREMENT) ? +1 : -1;
+        Object nxtVal = switch (value.getClass().getSimpleName()) {
+            case "Integer" -> (Integer) value + delta;
+            case "Double" -> (Double) value + delta;
+            case "Character" -> (Character) value + delta;
+            default -> throw new RuntimeError(variable, "Cannot " + expr.operator.getTokenType() + " this variable.");
+        };
+
+        environment.assign(variable, nxtVal);
+
+        if (expr.isPrefix){
+            return value;
+        } else {
+            return nxtVal;
+        }
+    }
+
     private boolean isTruthy(Object object){
         if (object == null) return false;
         if (object instanceof Boolean) return (boolean) object;
@@ -227,7 +228,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         return null;
     }
 
-//    TODO: else-if block execute
     @Override
     public Object visitIfStmt(Stmt.If stmt) {
         boolean isIfDone = false;

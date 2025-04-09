@@ -43,6 +43,11 @@ public class AstPrinter implements Expr.Visitor<String>{
         return (String) expr.name.getLiteral();
     }
 
+    @Override
+    public String visitIncrementOrDecrementExpr(Expr.IncrementOrDecrement expr) {
+        return null;
+    }
+
     private String parenthesize(String name, Expr... exprs){
         StringBuilder builder = new StringBuilder();
 

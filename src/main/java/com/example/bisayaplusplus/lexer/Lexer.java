@@ -1,47 +1,77 @@
+/* LEXER
+ * This class is responsible for scanning and converting the source code into tokens.
+ * It breaks down the code into its fundamental building blocks such as
+ * keywords, operators, literals, and identifiers.
+ *
+ * It handles whitespace, comments, and tracks line/position information for error reporting.
+ * The token stream it produces serves as input for the parser in the next compilation stage.
+ *
+ * If the lexer will encounter an error, it will stop scanning and reflect the error to the user.
+ */
+
 package com.example.bisayaplusplus.lexer;
 
 import com.example.bisayaplusplus.exception.*;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Lexer {
+    // Source code
     private final String program;
+
+    // List of tokens
     private final List<Token> tokens = new ArrayList<>();
+
+    // Lexer variables
     private int start, current = 0, line = 1;
 
+    // Reserved words for Bisaya++
     public static final Map<String, TokenType> keywords = new HashMap<>(){
         {
+            // START and END keywords
             put("SUGOD", TokenType.START_STMT);
             put("KATAPUSAN", TokenType.END_STMT);
 
+            // DECLARATION keywords
             put("MUGNA", TokenType.CREATE_STMT);
             put("IPAKITA", TokenType.PRINT_STMT);
             put("DAWAT", TokenType.READ_STMT);
 
+            // DATA_TYPE keywords
             put("NUMERO", TokenType.INT_KEYWORD);
             put("LETRA", TokenType.CHAR_KEYWORD);
             put("TIPIK", TokenType.DOUBLE_KEYWORD);
             put("TINUOD", TokenType.BOOL_KEYWORD);
 
+            // IF statement
             put("KUNG", TokenType.IF);
             put("KUNG DILI", TokenType.IF_ELSE);
             put("KUNG WALA", TokenType.ELSE);
+
+            // Block keyword
             put("PUNDOK", TokenType.CODE_BLOCK);
+
+            // FOR loop
             put("ALANG SA", TokenType.FOR_LOOP);
 
+            // LOGICAL operators
             put("O", TokenType.LOGIC_OR);
             put("DILI", TokenType.LOGIC_NOT);
             put("UG", TokenType.LOGIC_AND);
         }
     };
 
+    // Constructor
     public Lexer(String program){
         this.program = program;
     }
 
+    /*
+    * The function that will scan the source code
+    * and convert to tokens.
+    */
     public List<Token> scanTokens() throws LexerException {
         while (!isAtEnd()){
             start = current;
@@ -51,31 +81,49 @@ public class Lexer {
         return tokens;
     }
 
+    // Scanning individual character to convert into a token
     private void scanToken() throws LexerException {
         char c = getCurrCharThenNext();
 
         switch(c){
             case '{': addToken(TokenType.LEFT_CURLY); break;
             case '}': addToken(TokenType.RIGHT_CURLY); break;
-            // ARITHMETIC OPERATORS
             case '(': addToken(TokenType.LEFT_PAREN); break;
             case ')': addToken(TokenType.RIGHT_PAREN); break;
-            case '#': addToken(TokenType.HASHTAG); break;
+            case ':': addToken(TokenType.COLON);break;
+            case ',': addToken(TokenType.COMMA); break;
+
+            // ARITHMETIC OPERATORS w special cases
             case '*': addToken(TokenType.MULTIPLY); break;
             case '/': addToken(TokenType.DIVIDE); break;
             case '%': addToken(TokenType.MODULO);break;
-            case '+': addToken(isUnaryToken() ? TokenType.POSITIVE : TokenType.PLUS); break;
+            case '+':
+                if (charMatch('+')){
+                    addToken(TokenType.INCREMENT);
+                } else if (isUnaryToken()){
+                    addToken(TokenType.POSITIVE);
+                } else {
+                    addToken(TokenType.PLUS);
+                }
+                break;
             case '-': // comment
                 if (charMatch('-')){
-                    while (!isAtEnd() && getNextChar() != '\n') getCurrCharThenNext();
-                    getCurrCharThenNext(); // flush out newline
-                    line++;
+                    if (checkPrevToken() != null && (checkPrevToken() == TokenType.IDENTIFIER || isIdentifierChar(getNextChar()))){
+                        addToken(TokenType.DECREMENT);
+                    } else {
+                        while (!isAtEnd() && getNextChar() != '\n'){
+                            getCurrCharThenNext();
+                        }
+                        addToken(TokenType.COMMENT);
+                    }
                 } else if (isUnaryToken()) {
                     addToken(TokenType.NEGATIVE); // unary operator
                 } else {
                     addToken(TokenType.MINUS); // binary operator
                 }
                 break;
+
+
             case '=': addToken(charMatch('=') ? TokenType.DOUBLE_EQUAL : TokenType.EQUAL); break;
             case '>': addToken(charMatch('=') ? TokenType.GREATER_OR_EQUAL : TokenType.GREATER_THAN); break;
             case '<':
@@ -87,23 +135,25 @@ public class Lexer {
                     addToken(TokenType.LESSER_THAN);
                 }
                 break;
+
             // PROGRAM - SPECIAL CHAR
             case '$': addToken(TokenType.CNEW_LINE);break;
             case '&': addToken(TokenType.CONCAT); break;
             case '[': // open escape code
                 if (isAtEnd()){
-                    throw new UnexpectedEOF("Unexpected EOF while parsing — missing escape character and closing escape code.", line);
+                    throw new UnexpectedEOF("Missing escape character and closing escape code.", line);
                 }
 
                 addToken(TokenType.ESCAPE_CHAR, getCurrCharThenNext());
 
                 if (isAtEnd()){
-                    throw new UnexpectedEOF("Unexpected EOF while parsing — missing closing escape code.", line);
+                    throw new UnexpectedEOF("Missing closing escape code.", line);
                 }
 
                 if (!charMatch(']')){
                     throw new UnexpectedTokenException(getCurrCharThenNext() + "", "Only 1 character need for escape. Expected closing escape code ']'.", line);
                 }
+
             // for whitespaces
             case ' ':
             case '\r':
@@ -123,8 +173,6 @@ public class Lexer {
             case '_': // starting identifier
                 addTokenIdentifier();
                 break;
-            case ':': addToken(TokenType.COLON);break;
-            case ',': addToken(TokenType.COMMA); break;
             default:
                 if (Character.isDigit(c)){ // number literal
                     addTokenNumber();
@@ -136,17 +184,6 @@ public class Lexer {
         }
     }
 
-    // function to get next character & increment the current counter
-    private char getCurrCharThenNext(){
-        return program.charAt(current++);
-    }
-
-    // get next character without incrementing the current counter
-    private char getNextChar(){
-        if (isAtEnd()) return '\0';
-        return program.charAt(current);
-    }
-
     // function to take in variable names
     private void addTokenIdentifier(){
         while (!isAtEnd() && isIdentifierChar(getNextChar())){
@@ -155,11 +192,6 @@ public class Lexer {
 
         String value = program.substring(start, current);
         TokenType type = keywords.get(value);
-
-        if (type == null){
-            addToken(TokenType.IDENTIFIER, value);
-            return;
-        }
 
         // conditional - if-else
         // control struc - for loop
@@ -177,14 +209,12 @@ public class Lexer {
             } else {
                 type = newType;
             }
+        } else if (type == null) {
+            addToken(TokenType.IDENTIFIER, value);
+            return;
         }
 
         addToken(type);
-    }
-
-    // function to check if the char kay valid siya sa identifier
-    private boolean isIdentifierChar(char c){
-        return Character.isLetter(c) || Character.isDigit(c) || c == '_';
     }
 
     // function to get literal string
@@ -242,7 +272,7 @@ public class Lexer {
     // function to add character literal
     private void addTokenChar() throws UnexpectedTokenException, UnexpectedEOF {
         if (isAtEnd()){
-            throw new UnexpectedEOF("Unexpected EOF while parsing a character literal.", line);
+            throw new UnexpectedEOF("Missing character literal.", line);
         }
 
         addToken(TokenType.CHARACTER, getCurrCharThenNext());
@@ -252,6 +282,19 @@ public class Lexer {
         }
 
         getCurrCharThenNext();
+    }
+
+    //-------------- UTIL FUNCTIONS ------------------
+
+    // function to get next character & increment the current counter
+    private char getCurrCharThenNext(){
+        return program.charAt(current++);
+    }
+
+    // get next character without incrementing the current counter
+    private char getNextChar(){
+        if (isAtEnd()) return '\0';
+        return program.charAt(current);
     }
 
     // checks if the current character matched the expected character
@@ -274,6 +317,26 @@ public class Lexer {
         return current >= program.length();
     }
 
+    // function to check if the char kay valid siya sa identifier
+    private boolean isIdentifierChar(char c){
+        return Character.isLetter(c) || Character.isDigit(c) || c == '_';
+    }
+
+    // function to check if the previous token is a number
+    // if number -> return false ; if not -> return true
+    private boolean isUnaryToken(){
+        System.out.println("checkUnary: " + checkPrevToken());
+        return !(checkPrevToken() == TokenType.INTEGER || checkPrevToken() == TokenType.DOUBLE || checkPrevToken() == TokenType.IDENTIFIER);
+    }
+    // function to check the recently added token type
+    private TokenType checkPrevToken(){
+        if (tokens.isEmpty()){
+            return null;
+        }
+
+        return tokens.get(tokens.size()-1).getTokenType();
+    }
+
     // add new token to list
     private void addToken(TokenType type){
         addToken(type, null);
@@ -281,16 +344,5 @@ public class Lexer {
 
     private void addToken(TokenType type, Object literal){
         tokens.add(new Token(type, literal, line));
-    }
-
-    // function to check if the previous token is a number
-    // if number -> return false ; if not -> return true
-    private boolean isUnaryToken(){
-        System.out.println("checkUnary: " + checkPrevToken());
-        return !(checkPrevToken() == TokenType.INTEGER || checkPrevToken() == TokenType.DOUBLE);
-    }
-    // function to check the recently added token type
-    private TokenType checkPrevToken(){
-        return tokens.get(tokens.size()-1).getTokenType();
     }
 }

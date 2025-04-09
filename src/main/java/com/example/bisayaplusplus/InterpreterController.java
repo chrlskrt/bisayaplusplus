@@ -9,7 +9,6 @@ import com.example.bisayaplusplus.parser.Parser;
 import com.example.bisayaplusplus.parser.Stmt;
 import javafx.event.ActionEvent;
 import javafx.scene.control.TextArea;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import java.io.File;
@@ -64,7 +63,7 @@ public class InterpreterController {
             return;
         } catch (Exception e){
             taOutput.appendText("Lexer exception: " + e.getMessage());
-                        e.printStackTrace();
+            e.printStackTrace();
             return;
         }
 
