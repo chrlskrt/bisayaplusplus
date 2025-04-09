@@ -352,7 +352,15 @@ public class Parser {
         if (matchToken(TokenType.INTEGER)) return new Expr.Literal("integer", getPrevToken().getLiteral());
         if (matchToken(TokenType.DOUBLE)) return new Expr.Literal("double", getPrevToken().getLiteral());
         if (matchToken(TokenType.STRING)) return new Expr.Literal("string", getPrevToken().getLiteral());
-        if (matchToken(TokenType.ESCAPE_CHAR)) return new Expr.Literal("character", getPrevToken().getLiteral());
+        if (matchToken(TokenType.ESCAPE_CHAR)) {
+            char esc = (char) getPrevToken().getLiteral();
+            return switch (esc) {
+                case 'r' -> new Expr.Literal("character", '\r');
+                case 'n' -> new Expr.Literal("character", '\n');
+                case 't' -> new Expr.Literal("character", '\t');
+                default -> new Expr.Literal("character", getPrevToken().getLiteral());
+            };
+        }
         if (matchToken(TokenType.IDENTIFIER)) return new Expr.Variable(getPrevToken());
         if (matchToken(TokenType.LEFT_PAREN)){
             Expr expr = parseExpression();
