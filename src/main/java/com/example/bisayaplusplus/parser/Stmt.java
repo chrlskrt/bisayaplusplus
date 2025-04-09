@@ -8,6 +8,8 @@ public abstract class Stmt {
   public interface Visitor<R> {
     R visitBlockStmt(Block stmt);
     R visitExpressionStmt(Expression stmt);
+    R visitIfStmt(If stmt);
+    R visitElseIfStmt(ElseIf stmt);
     R visitPrintStmt(Print stmt);
     R visitVarStmt(Var stmt);
   }
@@ -34,6 +36,38 @@ public abstract class Stmt {
     }
 
     public final Expr expression;
+  }
+ public static class If extends Stmt{
+    public If (Expr condition, Stmt thenBranch, List<ElseIf> elseIfBranch, Stmt elseBranch){
+      this.condition = condition;
+      this.thenBranch = thenBranch;
+      this.elseIfBranch = elseIfBranch;
+      this.elseBranch = elseBranch;
+    }
+
+    @Override
+    public <R> R accept(Visitor<R> visitor) {
+      return visitor.visitIfStmt(this);
+    }
+
+    public final Expr condition;
+    public final Stmt thenBranch;
+    public final List<ElseIf> elseIfBranch;
+    public final Stmt elseBranch;
+  }
+ public static class ElseIf extends Stmt{
+    public ElseIf (Expr condition, Stmt thenBranch){
+      this.condition = condition;
+      this.thenBranch = thenBranch;
+    }
+
+    @Override
+    public <R> R accept(Visitor<R> visitor) {
+      return visitor.visitElseIfStmt(this);
+    }
+
+    public final Expr condition;
+    public final Stmt thenBranch;
   }
  public static class Print extends Stmt{
     public Print (Expr expression){

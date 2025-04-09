@@ -1,9 +1,6 @@
 package com.example.bisayaplusplus.lexer;
 
-import com.example.bisayaplusplus.exception.IllegalCharacterException;
-import com.example.bisayaplusplus.exception.LexerException;
-import com.example.bisayaplusplus.exception.UnexpectedTokenException;
-import com.example.bisayaplusplus.exception.UnterminatedStringException;
+import com.example.bisayaplusplus.exception.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,7 +67,7 @@ public class Lexer {
             case '+': addToken(isUnaryToken() ? TokenType.POSITIVE : TokenType.PLUS); break;
             case '-': // comment
                 if (charMatch('-')){
-                    while (getNextChar() != '\n' && !isAtEnd()) getCurrCharThenNext();
+                    while (!isAtEnd() && getNextChar() != '\n') getCurrCharThenNext();
                     getCurrCharThenNext(); // flush out newline
                     line++;
                 } else if (isUnaryToken()) {
@@ -94,9 +91,18 @@ public class Lexer {
             case '$': addToken(TokenType.CNEW_LINE);break;
             case '&': addToken(TokenType.CONCAT); break;
             case '[': // open escape code
+                if (isAtEnd()){
+                    throw new UnexpectedEOF("Unexpected EOF while parsing — missing escape character and closing escape code.", line);
+                }
+
                 addToken(TokenType.ESCAPE_CHAR, getCurrCharThenNext());
+
+                if (isAtEnd()){
+                    throw new UnexpectedEOF("Unexpected EOF while parsing — missing closing escape code.", line);
+                }
+
                 if (!charMatch(']')){
-                    throw new UnexpectedTokenException(getCurrCharThenNext() + "", "Expected closing escape code ']'.", line);
+                    throw new UnexpectedTokenException(getCurrCharThenNext() + "", "Only 1 character need for escape. Expected closing escape code ']'.", line);
                 }
             // for whitespaces
             case ' ':
@@ -143,7 +149,7 @@ public class Lexer {
 
     // function to take in variable names
     private void addTokenIdentifier(){
-        while (isIdentifierChar(getNextChar())){
+        while (!isAtEnd() && isIdentifierChar(getNextChar())){
             getCurrCharThenNext();
         }
 
@@ -212,7 +218,7 @@ public class Lexer {
             System.out.println(getCurrCharThenNext());
         }
 
-        if (isIdentifierChar(program.charAt(current))){
+        if (!isAtEnd() && isIdentifierChar(program.charAt(current))){
             throw new LexerException("Unexpected identifier-like sequence after a number (" + program.substring(start, current) + ").", line);
         } else if (getNextChar() == '.'){
             getCurrCharThenNext();
@@ -234,7 +240,11 @@ public class Lexer {
     }
 
     // function to add character literal
-    private void addTokenChar() throws UnexpectedTokenException {
+    private void addTokenChar() throws UnexpectedTokenException, UnexpectedEOF {
+        if (isAtEnd()){
+            throw new UnexpectedEOF("Unexpected EOF while parsing a character literal.", line);
+        }
+
         addToken(TokenType.CHARACTER, getCurrCharThenNext());
 
         if (getNextChar() != '\''){

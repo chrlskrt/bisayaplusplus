@@ -97,20 +97,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
                 throw new RuntimeError(expr.operator, "ADDITION: Operands must be of the same data type.");
             case CONCAT: return left.toString() + right.toString();
-            case GREATER_THAN:
-                checkNumberOperands(expr.operator, left, right, "COMPARISON (GREATER_THAN)");
-                return ((Number) left).doubleValue() >  ((Number) right).doubleValue();
-            case GREATER_OR_EQUAL:
-                checkNumberOperands(expr.operator, left, right, "COMPARISON (GREATER_OR_EQUAL)");
-                return ((Number) left).doubleValue() >=  ((Number) right).doubleValue();
-            case LESSER_THAN:
-                checkNumberOperands(expr.operator, left, right, "COMPARISON (LESSER_THAN)");
-                return ((Number) left).doubleValue() <  ((Number) right).doubleValue();
-            case LESSER_OR_EQUAL:
-                checkNumberOperands(expr.operator, left, right, "COMPARISON (LESSER_OR_EQUAL)");
-                return ((Number) left).doubleValue() <=  ((Number) right).doubleValue();
-            case NOT_EQUAL: return !(left == right);
-            case DOUBLE_EQUAL: return (left == right);
         }
 
         return null;
@@ -128,15 +114,34 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
     @Override
     public Object visitLogicalExpr(Expr.Logical expr) {
-        Object left = evaluate(expr.left);
+        TokenType opType = (expr.operator).getTokenType();
+        Object right = evaluate(expr.right);
 
-        if ((expr.operator).getTokenType() == TokenType.LOGIC_OR){
-            if (isTruthy(left)) return left;
-        } else {
-            if (!isTruthy(left)) return left;
+        if (opType == TokenType.LOGIC_NOT){
+            return !isTruthy(right);
         }
 
-        return evaluate(expr.right);
+        Object left = evaluate(expr.left);
+        switch (opType){
+            case LOGIC_OR: if (isTruthy(left)) return left;
+            case LOGIC_AND: if (!isTruthy(left)) return left; return right;
+            case GREATER_THAN:
+                checkNumberOperands(expr.operator, left, right, "COMPARISON (GREATER_THAN)");
+                return ((Number) left).doubleValue() >  ((Number) right).doubleValue();
+            case GREATER_OR_EQUAL:
+                checkNumberOperands(expr.operator, left, right, "COMPARISON (GREATER_OR_EQUAL)");
+                return ((Number) left).doubleValue() >=  ((Number) right).doubleValue();
+            case LESSER_THAN:
+                checkNumberOperands(expr.operator, left, right, "COMPARISON (LESSER_THAN)");
+                return ((Number) left).doubleValue() <  ((Number) right).doubleValue();
+            case LESSER_OR_EQUAL:
+                checkNumberOperands(expr.operator, left, right, "COMPARISON (LESSER_OR_EQUAL)");
+                return ((Number) left).doubleValue() <=  ((Number) right).doubleValue();
+            case NOT_EQUAL: return !(left == right);
+            case DOUBLE_EQUAL: return (left == right);
+        }
+
+        return null;
     }
 
     @Override
@@ -158,8 +163,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
                 } else if (right instanceof Double){
                     return +(Double) right;
                 }
-            case LOGIC_NOT:
-                return !isTruthy(right);
         }
 
         return null;
@@ -186,7 +189,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     }
 
     private void checkNumberOperands(Token operator, Object left, Object right, String message){
-//        if ((left instanceof Double && right instanceof Double) || (left instanceof Integer && right instanceof Integer)) return;
         if (left instanceof Number && right instanceof Number) return;
         throw new RuntimeError(operator, message + ": Operands must be numbers. " + left + " = " + left.getClass() + " ; " + right + " = " + right.getClass());
     }
@@ -194,6 +196,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     // INTERPRETING STATEMENTS
     public void execute(Stmt stmt){
         stmt.accept(this);
+    }
+    public boolean executeElIf(Stmt stmt){
+        return (boolean) stmt.accept(this);
     }
 
     @Override
@@ -220,6 +225,40 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     public Void visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expression);
         return null;
+    }
+
+//    TODO: else-if block execute
+    @Override
+    public Object visitIfStmt(Stmt.If stmt) {
+        boolean isIfDone = false;
+        if (isTruthy(evaluate(stmt.condition))){
+            execute(stmt.thenBranch);
+
+            isIfDone = true;
+        } else if (stmt.elseIfBranch != null) {
+            for (Stmt.ElseIf elif: stmt.elseIfBranch){
+                if (executeElIf(elif)){
+                    isIfDone = true;
+                    break;
+                }
+            }
+        }
+
+        if (stmt.elseBranch != null && !isIfDone){
+            execute(stmt.elseBranch);
+        }
+
+        return null;
+    }
+
+    @Override
+    public Object visitElseIfStmt(Stmt.ElseIf stmt) {
+        if (isTruthy(evaluate(stmt.condition))){
+            execute(stmt.thenBranch);
+            return true;
+        }
+
+        return false;
     }
 
     @Override

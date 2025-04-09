@@ -9,6 +9,7 @@ import com.example.bisayaplusplus.parser.Parser;
 import com.example.bisayaplusplus.parser.Stmt;
 import javafx.event.ActionEvent;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import java.io.File;
@@ -21,7 +22,31 @@ import java.util.List;
 public class InterpreterController {
     public TextArea taInput;
     public TextArea taOutput;
+    public TextArea taLineNumbers;
     private Stage stage;
+
+    public void initialize(){
+        taInput.textProperty().addListener((observable, oldText, newText)->{
+            updateLineNumbers();
+        });
+
+        taInput.scrollTopProperty().addListener((observable, oldText, newText)->{
+            taLineNumbers.setScrollTop(newText.doubleValue());
+        });
+
+        updateLineNumbers();
+    }
+
+    public void updateLineNumbers() {
+        int lines = taInput.getText().split("\n", -1).length;
+        StringBuilder lineNumbers = new StringBuilder();
+        taLineNumbers.clear();
+        for (int i = 1; i <= lines; i++) {
+            lineNumbers.append(i).append('\n');
+        }
+        taLineNumbers.setText(lineNumbers.toString());
+        taLineNumbers.setScrollTop(taInput.getScrollTop());
+    }
 
     public void runInterpreter(ActionEvent actionEvent) {
         Lexer lexer = new Lexer(taInput.getText());
@@ -38,8 +63,8 @@ public class InterpreterController {
             taOutput.appendText(e.getMessage());
             return;
         } catch (Exception e){
-//            e.printStackTrace();
             taOutput.appendText("Lexer exception: " + e.getMessage());
+                        e.printStackTrace();
             return;
         }
 
@@ -52,8 +77,8 @@ public class InterpreterController {
             taOutput.appendText(e.getMessage());
             return;
         } catch (Exception e){
-//            e.printStackTrace();
             taOutput.appendText("Parser exception: " + e.getMessage());
+            e.printStackTrace();
             return;
         }
 
