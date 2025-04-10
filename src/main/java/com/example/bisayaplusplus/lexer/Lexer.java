@@ -114,7 +114,7 @@ public class Lexer {
                         while (!isAtEnd() && getNextChar() != '\n'){
                             getCurrCharThenNext();
                         }
-                        addToken(TokenType.COMMENT);
+//                        addToken(TokenType.COMMENT);
                     }
                 } else if (isUnaryToken()) {
                     addToken(TokenType.NEGATIVE); // unary operator
@@ -161,7 +161,9 @@ public class Lexer {
                 // ignore whitespace
                 break;
             case '\n':
-                addToken(TokenType.NEW_LINE);
+                if (checkPrevToken() != null && checkPrevToken() != TokenType.NEW_LINE){
+                    addToken(TokenType.NEW_LINE);
+                }
                 line++;
                 break;
             case '\"': // string literal

@@ -26,7 +26,12 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    // main function doing the parsing
+    /*
+     * Main function that does the parsing
+     * Returns a list of statements that will serve as input for the interpreter.
+     *
+     * Checks the grammar for the whole program.
+     */
     public List<Stmt> parse() throws ParserException {
         List<Stmt> statements = new ArrayList<>();
 
@@ -34,22 +39,21 @@ public class Parser {
             return statements;
         }
 
-        while (matchToken(TokenType.COMMENT)) advance();
-
         // START STATEMENT
         if (!matchToken(TokenType.START_STMT)){
             throw new ParserException("Expected 'SUGOD' at the start of the program.", getCurrToken().getLine());
         }
 
-        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after 'SUGOD''", true);
+        expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", "'SUGOD' statement.", true);
 
-        String typeStmt = "";
+        String typeStmt;
         // go through all the tokens after SUGOD
         while (!matchToken(TokenType.END_STMT) && !isAtEnd()){
-            typeStmt = parseStatements(statements);
+            typeStmt = parseStatements(statements); // parse individual statement
 
+            // for NEW_LINE after every statement
             if (!typeStmt.equals("IF")){
-                consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after a statement. 1 statement per line.", true);
+                expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", typeStmt + " statement. 1 statement per line.", true);
             }
         }
 
@@ -57,7 +61,7 @@ public class Parser {
             throw new ParserException("Expected 'KATAPUSAN' at the end of the program.", getPrevToken().getLine() + 1);
         }
 
-        System.out.println(isAtEnd());
+        System.out.println("Is at end of the program? " + isAtEnd());
 
         // checking if there's extra code after a 'KATAPUSAN' that is not a new_line character
         if (!isAtEnd()){
@@ -66,15 +70,18 @@ public class Parser {
             }
 
             if (!isAtEnd()){
-                System.out.println(getCurrToken());
-                throw new ParserException("Unexpected code found after 'KATAPUSAN' end statement.", getCurrToken().getLine());
+                throw new ParserException("Unexpected '" + getCurrToken().getLiteral() + "' - " + getCurrToken().getTokenType() + " found after 'KATAPUSAN' end statement.", getCurrToken().getLine());
             }
         }
 
         return statements;
     }
 
-    // function for declaration statement
+    /* Function that will check for individual statement per line.
+     * @param statements - list of existing statements, where we add the new statement.
+     *
+     * Returns a string that contains the type of statement na na-parse
+     */
     private String parseStatements(List<Stmt> statements) throws ParserException {
         // Comment
         if (matchToken(TokenType.COMMENT)){
@@ -99,11 +106,20 @@ public class Parser {
             return "IF";
         }
 
-        statements.add(parseExprStatement());
-        return "EXPR";
+        // For-loop
+        if (matchToken(TokenType.FOR_LOOP)){
+            statements.add(parseForStmt());
+            return "FOR LOOP";
+        }
+
+        // Expr statements
+        Stmt exprStmt = parseExprStatement();
+        statements.add(exprStmt);
+        return ((Stmt.Expression) exprStmt).expression.getClass().getSimpleName();
     }
 
     // variable declaration
+    // returns a list of statements that contains 1 or more variable declarations
     private List<Stmt> parseVarDeclaration() throws ParserException {
         String dataType = switch (getCurrToken().getTokenType()) {
             case INT_KEYWORD -> "integer";
@@ -119,7 +135,7 @@ public class Parser {
         List<Stmt> varDeclarations = new ArrayList<>();
 
         do {
-            Token name = consumeToken(TokenType.IDENTIFIER, "Expected IDENTIFIER after DATA_TYPE / COMMA.", false);
+            Token name = expectAndConsumeToken(TokenType.IDENTIFIER, "IDENTIFIER", "DATA_TYPE / COMMA.", false);
             Expr initializer = null;
             if (matchToken(TokenType.EQUAL)){
                 System.out.println(name.getLiteral() + " has initialized value");
@@ -133,16 +149,30 @@ public class Parser {
         return varDeclarations;
     }
 
+    //---------- Parsing FOR LOOP ---------------------
+    private Stmt parseForStmt() throws ParserException {
+        expectAndConsumeToken(TokenType.LEFT_PAREN, "(","ALANG SA.", false);
+
+        // getting initialization statement
+        List<Stmt> initialization = new ArrayList<>();
+        if (matchToken(TokenType.CREATE_STMT)){
+            initialization.addAll(parseVarDeclaration());
+        } else {
+            initialization.add(parseExprStatement());
+        }
+
+
+
+        return null;
+    }
+
+    //---------- Parsing IF statements ------------------
     private Stmt parseIfStmt() throws ParserException {
-        System.out.println("parsing if statement");
-        consumeToken(TokenType.LEFT_PAREN, "Expected '(' after IF keyword.", false);
-        System.out.println("parsing condition");
+        expectAndConsumeToken(TokenType.LEFT_PAREN, "(", "IF keyword.", false);
         Expr condition = parseExpression();
         checkIFConditions(condition);
-        System.out.println("consuming right paren");
-        consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after the IF condition.", false);
-        System.out.println("consuming new line");
-        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after the IF statement. To parse PUNDOK for IF.", false);
+        expectAndConsumeToken(TokenType.RIGHT_PAREN, ")", "the IF condition.", false);
+        expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", "the IF statement. To parse PUNDOK for IF.", false);
 
         // for if block statements
         Stmt thenBranch = new Stmt.Block(parseBlock("IF BLOCK"));
@@ -153,10 +183,10 @@ public class Parser {
             elseIfBranch = new ArrayList<>();
             do {
                 // getting condition
-                consumeToken(TokenType.LEFT_PAREN, "Expected '(' after ELSE_IF keyword.", false);
+                expectAndConsumeToken(TokenType.LEFT_PAREN, "(", " ELSE_IF keyword.", false);
                 Expr elIfCondition = parseLogicalOR();
-                consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after the ELSE_IF condition.", false);
-                consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after the ELSE_IF statement. Only 1 statement per line.", false);
+                expectAndConsumeToken(TokenType.RIGHT_PAREN, ")", " the ELSE_IF condition.", false);
+                expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " the ELSE_IF statement. Only 1 statement per line.", false);
 
                 // storing and getting executable statements under el-if block
                 elseIfBranch.add(new Stmt.ElseIf(elIfCondition, new Stmt.Block(parseBlock("ELSE-IF-"+(elseIfBranch.size() + 1)))));
@@ -164,7 +194,7 @@ public class Parser {
         }
 
         if (matchToken(TokenType.ELSE)){
-            consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after ELSE statement. Only 1 statement per line.", false);
+            expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " ELSE statement. Only 1 statement per line.", false);
             elseBranch = new Stmt.Block(parseBlock("ELSE BLOCK"));
         }
 
@@ -173,6 +203,11 @@ public class Parser {
         return new Stmt.If(condition, thenBranch, elseIfBranch, elseBranch);
     }
 
+    /* A function that will check if the condition provided for the IF statement
+     * is a boolean/logical expression.
+     *
+     * Directly throws an error if the condition is not valid.
+     */
     private void checkIFConditions(Expr condition) throws ParserException {
         if (!(condition instanceof Expr.Logical)){
             Expr expr = condition;
@@ -189,12 +224,13 @@ public class Parser {
             }
         }
     }
+
     /*
-    * PRINT STATEMENT SYNTAX
-    * IPAKITA: {EXPR}
-    */
+     * PRINT STATEMENT SYNTAX
+     * IPAKITA: {EXPR} (& {EXPR})*
+     */
     private Stmt parsePrintStatement() throws ParserException {
-        consumeToken(TokenType.COLON, "Expect ':' after IPAKITA statement.", false);
+        expectAndConsumeToken(TokenType.COLON, ":", " IPAKITA statement.", false);
         Expr value = parseExpression();
         System.out.println("the value for print: " + astPrinter.print(value));
         return new Stmt.Print(value);
@@ -202,33 +238,29 @@ public class Parser {
 
     // for code blocks - code sulod sa PUNDOK {}
     private List<Stmt> parseBlock(String blockName) throws ParserException {
-        consumeToken(TokenType.CODE_BLOCK, "Expected 'PUNDOK' statement for the " + blockName + " block.", false);
+        expectAndConsumeToken(TokenType.CODE_BLOCK, "PUNDOK", blockName + " statement.", false);
         List<Stmt> blockStatements = new ArrayList<>();
-        consumeToken(TokenType.LEFT_CURLY, "Expect '{' after PUNDOK statement. Code block: " + blockName, false);
-        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after '{' in PUNDOK statement.", false);
+        expectAndConsumeToken(TokenType.LEFT_CURLY, "{", " PUNDOK statement. Code block: " + blockName, false);
+        expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " '{' in PUNDOK statement.", false);
 
         while (!isCurrTokenType(TokenType.RIGHT_CURLY) && !isAtEnd()){
             parseStatements(blockStatements);
-            consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after a statement inside PUNDOK", false);
+            expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " a statement inside PUNDOK", false);
         }
 
-        consumeToken(TokenType.RIGHT_CURLY, "Expected '}' after block. Code block: " + blockName, false);
-        consumeToken(TokenType.NEW_LINE, "Expected NEW_LINE after PUNDOK for " + blockName + " block.", true);
+        expectAndConsumeToken(TokenType.RIGHT_CURLY, "}", " block. Code block: " + blockName, false);
+        expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " PUNDOK for " + blockName + " block.", true);
         return blockStatements;
     }
 
     // PARSING EXPRESSION STATEMENTS - refers mostly to mathematical expressions
+    // Valid expression statements -> Assignment (e.g. x = 2, x += 2) and Increment/Decrement (e.g. x++, --x)
     private Stmt parseExprStatement() throws ParserException {
-        Expr expr = parseExpression();
+        Expr expr = parseAssignment();
         if (!(expr instanceof Expr.Assign) && !(expr instanceof Expr.IncrementOrDecrement)){
-            throw new ParserException("Invalid statement.", getPrevToken().getLine());
+            throw new ParserException("Invalid statement. " + astPrinter.print(expr), getPrevToken().getLine());
         }
         return new Stmt.Expression(expr);
-    }
-
-    // expression - equality - comparison - term - factor - unary - primary
-    private Expr parseExpression() throws ParserException {
-        return parseAssignment();
     }
 
     // check assigning variable value
@@ -256,6 +288,11 @@ public class Parser {
 
 
         return expr;
+    }
+
+    // Mathematical expressions
+    private Expr parseExpression() throws ParserException {
+        return parseLogicalOR();
     }
 
     private Expr parseLogicalOR() throws ParserException {
@@ -387,12 +424,12 @@ public class Parser {
         }
         if (matchToken(TokenType.LEFT_PAREN)){
             Expr expr = parseExpression();
-            consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after expression.", false);
+            expectAndConsumeToken(TokenType.RIGHT_PAREN, ")", " expression.", false);
             System.out.println("return grouping");
             return new Expr.Grouping(expr);
         }
         if (matchToken(TokenType.CNEW_LINE)) return new Expr.Literal("character", '\n');
-        if (matchToken(TokenType.NEW_LINE)) throw new ParserException("Expected new statement in line. 1 statement per line. Received: ", getPrevToken().getLine());
+//        if (matchToken(TokenType.NEW_LINE)) throw new ParserException("Expected new statement in line. Every line should contain 1 statement.", getPrevToken().getLine());
 
         if (matchToken(TokenType.IF_ELSE, TokenType.ELSE)){
             throw new ParserException("Invalid syntax for IF statement. Missing IF code block.", getPrevToken().getLine());
@@ -418,11 +455,11 @@ public class Parser {
     }
 
     // function for throwing errors
-    private Token consumeToken(TokenType expectedType, String message, boolean isEndOfStmt) throws ParserException {
+    private Token expectAndConsumeToken(TokenType expectedType, String expToken, String afterWhat, boolean isEndOfStmt) throws ParserException {
         if (isAtEnd() && !isEndOfStmt) {
-            throw new ParserException("Unexpected EOF while parsing. " + message, getPrevToken().getLine());
+            throw new ParserException("Unexpected EOF while parsing. Expect '"+expToken+"' after " + afterWhat, getPrevToken().getLine());
         } else if (isAtEnd() && isEndOfStmt && expectedType == TokenType.NEW_LINE){
-            throw new ParserException("Expected 'KATAPUSAN' at end of program.", getPrevToken().getLine() + 1);
+            throw new ParserException("Expect 'KATAPUSAN' at end of program.", getPrevToken().getLine() + 1);
         }
 
         if (isCurrTokenType(TokenType.COMMENT)){
@@ -435,7 +472,7 @@ public class Parser {
         Token token = getCurrToken();
 
         // throws exception. it gives the message and the token that was found instead of the expected tokentype
-        throw new ParserException(message + " Received: " + ((token.getLiteral()) == null ? token.getTokenType().toString() : token.getLiteral()), token.getLine());
+        throw new ParserException("Expect '"+ expToken + "' after " + afterWhat + " Received: " + ((token.getLiteral()) == null ? token.getTokenType().toString() : token.getLiteral()), token.getLine());
     }
 
     // checks if the current expr has any of those token types

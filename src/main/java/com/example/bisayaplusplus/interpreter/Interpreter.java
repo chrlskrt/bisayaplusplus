@@ -277,6 +277,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     }
 
     @Override
+    public Object visitForLoopStmt(Stmt.ForLoop stmt) {
+        return null;
+    }
+
+    @Override
     public Void visitVarStmt(Stmt.Var stmt) {
         Object value = null;
         if (stmt.initializer != null){
