@@ -52,7 +52,7 @@ public class Parser {
             typeStmt = parseStatements(statements); // parse individual statement
 
             // for NEW_LINE after every statement
-            if (!typeStmt.equals("IF")){
+            if (!typeStmt.equals("IF") && !typeStmt.equals("FOR LOOP")){
                 expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", typeStmt + " statement. 1 statement per line.", true);
             }
         }
@@ -90,7 +90,7 @@ public class Parser {
 
         // Variable declarations
         if (matchToken(TokenType.CREATE_STMT)) {
-            statements.addAll(parseVarDeclaration());
+            statements.addAll(parseVarDeclaration(false));
             return "CREATE";
         }
 
@@ -108,7 +108,7 @@ public class Parser {
 
         // For-loop
         if (matchToken(TokenType.FOR_LOOP)){
-            statements.add(parseForStmt());
+            statements.add(parseForLoopStmt());
             return "FOR LOOP";
         }
 
@@ -120,7 +120,7 @@ public class Parser {
 
     // variable declaration
     // returns a list of statements that contains 1 or more variable declarations
-    private List<Stmt> parseVarDeclaration() throws ParserException {
+    private List<Stmt> parseVarDeclaration(boolean isForLoopInit) throws ParserException {
         String dataType = switch (getCurrToken().getTokenType()) {
             case INT_KEYWORD -> "integer";
             case BOOL_KEYWORD -> "boolean";
@@ -134,7 +134,9 @@ public class Parser {
 
         List<Stmt> varDeclarations = new ArrayList<>();
 
+//        int tempCurr; // for traversal purposes during for-loop declaration
         do {
+//            tempCurr = current;
             Token name = expectAndConsumeToken(TokenType.IDENTIFIER, "IDENTIFIER", "DATA_TYPE / COMMA.", false);
             Expr initializer = null;
             if (matchToken(TokenType.EQUAL)){
@@ -142,35 +144,55 @@ public class Parser {
                 initializer = parseExpression();
                 System.out.println(name.getLiteral() + " is initialized with " + astPrinter.print(initializer));
             }
+//            else if (isForLoopInit){
+////                current = tempCurr - 1;
+////                break;
+//            }
 
             varDeclarations.add(new Stmt.Var(dataType, name, initializer));
-        } while (matchToken(TokenType.COMMA));
+        } while (!isForLoopInit && matchToken(TokenType.COMMA));
 
         return varDeclarations;
     }
 
     //---------- Parsing FOR LOOP ---------------------
-    private Stmt parseForStmt() throws ParserException {
+    private Stmt parseForLoopStmt() throws ParserException {
         expectAndConsumeToken(TokenType.LEFT_PAREN, "(","ALANG SA.", false);
 
         // getting initialization statement
-        List<Stmt> initialization = new ArrayList<>();
+//        // multiple initialization statements
+//        List<Stmt> initialization = new ArrayList<>();
+//        if (matchToken(TokenType.CREATE_STMT)){
+//            initialization.addAll(parseVarDeclaration(true));
+//        } else {
+//            initialization.add(parseExprStatement());
+//        }
+        Stmt initialization;
         if (matchToken(TokenType.CREATE_STMT)){
-            initialization.addAll(parseVarDeclaration());
+            initialization = (parseVarDeclaration(true)).get(0);
         } else {
-            initialization.add(parseExprStatement());
+            initialization = parseExprStatement();
         }
 
+        expectAndConsumeToken(TokenType.COMMA, ",", " initialization statement in FOR LOOP.", false);
 
+        // parsing condition
+        Expr condition = parseExpression();
+        expectAndConsumeToken(TokenType.COMMA, ",", astPrinter.print(condition) + " condition expression in FOR LOOP.", false);
 
-        return null;
+        Stmt update = parseExprStatement();
+
+        expectAndConsumeToken(TokenType.RIGHT_PAREN, ")", astPrinter.print(((Stmt.Expression) update).expression) + " update expression in FOR LOOP", false);
+        expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " FOR_LOOP declaration.", false);
+        Stmt forBody = new Stmt.Block(parseBlock("FOR-LOOP"));
+
+        return new Stmt.ForLoop(initialization, condition, update, forBody);
     }
 
     //---------- Parsing IF statements ------------------
     private Stmt parseIfStmt() throws ParserException {
         expectAndConsumeToken(TokenType.LEFT_PAREN, "(", "IF keyword.", false);
         Expr condition = parseExpression();
-        checkIFConditions(condition);
         expectAndConsumeToken(TokenType.RIGHT_PAREN, ")", "the IF condition.", false);
         expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", "the IF statement. To parse PUNDOK for IF.", false);
 
@@ -184,7 +206,7 @@ public class Parser {
             do {
                 // getting condition
                 expectAndConsumeToken(TokenType.LEFT_PAREN, "(", " ELSE_IF keyword.", false);
-                Expr elIfCondition = parseLogicalOR();
+                Expr elIfCondition = parseExpression();
                 expectAndConsumeToken(TokenType.RIGHT_PAREN, ")", " the ELSE_IF condition.", false);
                 expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " the ELSE_IF statement. Only 1 statement per line.", false);
 
@@ -208,7 +230,7 @@ public class Parser {
      *
      * Directly throws an error if the condition is not valid.
      */
-    private void checkIFConditions(Expr condition) throws ParserException {
+    private void checkIfBooleanExpr(Expr condition, String stmt) throws ParserException {
         if (!(condition instanceof Expr.Logical)){
             Expr expr = condition;
             while (expr instanceof Expr.Grouping){
@@ -217,10 +239,10 @@ public class Parser {
 
             if (!(expr instanceof Expr.Logical)){
                 if (expr instanceof Expr.Assign){
-                    throw new ParserException("Invalid IF condition. Maybe you meant \"==\" instead of \"=\"?", getPrevToken().getLine());
+                    throw new ParserException("Invalid " + stmt + " condition. Maybe you meant \"==\" instead of \"=\"?", getPrevToken().getLine());
                 }
 
-                throw new ParserException("Invalid IF condition. Expected BOOLEAN expression.", getPrevToken().getLine());
+                throw new ParserException("Invalid " + stmt + " condition. Expected BOOLEAN expression.", getPrevToken().getLine());
             }
         }
     }
@@ -243,9 +265,14 @@ public class Parser {
         expectAndConsumeToken(TokenType.LEFT_CURLY, "{", " PUNDOK statement. Code block: " + blockName, false);
         expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " '{' in PUNDOK statement.", false);
 
+        String typeStmt;
         while (!isCurrTokenType(TokenType.RIGHT_CURLY) && !isAtEnd()){
-            parseStatements(blockStatements);
-            expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " a statement inside PUNDOK", false);
+            typeStmt = parseStatements(blockStatements);
+
+            // for NEW_LINE after every statement
+            if (!typeStmt.equals("IF") && !typeStmt.equals("FOR LOOP")){
+                expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", typeStmt + " statement inside PUNDOK", false);
+            }
         }
 
         expectAndConsumeToken(TokenType.RIGHT_CURLY, "}", " block. Code block: " + blockName, false);
@@ -261,6 +288,11 @@ public class Parser {
             throw new ParserException("Invalid statement. " + astPrinter.print(expr), getPrevToken().getLine());
         }
         return new Stmt.Expression(expr);
+    }
+
+    // Mathematical expressions
+    private Expr parseExpression() throws ParserException {
+        return parseAssignment();
     }
 
     // check assigning variable value
@@ -288,11 +320,6 @@ public class Parser {
 
 
         return expr;
-    }
-
-    // Mathematical expressions
-    private Expr parseExpression() throws ParserException {
-        return parseLogicalOR();
     }
 
     private Expr parseLogicalOR() throws ParserException {

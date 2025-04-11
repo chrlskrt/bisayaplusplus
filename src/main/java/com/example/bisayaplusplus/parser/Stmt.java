@@ -12,6 +12,7 @@ public abstract class Stmt {
     R visitElseIfStmt(ElseIf stmt);
     R visitPrintStmt(Print stmt);
     R visitForLoopStmt(ForLoop stmt);
+    R visitWhileStmt(While stmt);
     R visitVarStmt(Var stmt);
   }
  public static class Block extends Stmt{
@@ -84,11 +85,11 @@ public abstract class Stmt {
   }
  public static class ForLoop extends Stmt{
 
-    public final List<Stmt> initialization;
+    public final Stmt initialization;
     public final Expr condition;
-    public final Expr update;
+    public final Stmt update;
     public final Stmt body;
-    public ForLoop (List<Stmt> initialization, Expr condition, Expr update, Stmt body){
+    public ForLoop (Stmt initialization, Expr condition, Stmt update, Stmt body){
       this.initialization = initialization;
       this.condition = condition;
       this.update = update;
@@ -98,6 +99,20 @@ public abstract class Stmt {
     @Override
     public <R> R accept(Visitor<R> visitor) {
       return visitor.visitForLoopStmt(this);
+    }
+  }
+ public static class While extends Stmt{
+
+    public final Expr condition;
+    public final Stmt body;
+    public While (Expr condition, Stmt body){
+      this.condition = condition;
+      this.body = body;
+    }
+
+    @Override
+    public <R> R accept(Visitor<R> visitor) {
+      return visitor.visitWhileStmt(this);
     }
   }
  public static class Var extends Stmt{

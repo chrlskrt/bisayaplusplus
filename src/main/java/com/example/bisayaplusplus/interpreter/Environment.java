@@ -18,9 +18,13 @@ public class Environment {
     private final Map<String, Object> values = new HashMap<>();
     private final Map<String, String> dataTypes = new HashMap<>();
 
-    public void define(String name, String dataType, Object value){
-        dataTypes.put(name, dataType);
-        values.put(name, value);
+    public void define(Token var, String dataType, Object value){
+        if (dataTypes.containsKey(var.getLiteral().toString())){
+            throw new RuntimeError(var, "Redeclaration of " + var.getLiteral());
+        }
+
+        dataTypes.put(var.getLiteral().toString(), dataType);
+        values.put(var.getLiteral().toString(), value);
     }
 
     public Object get(Token name){
@@ -28,17 +32,20 @@ public class Environment {
             return values.get(name.getLiteral());
         };
 
-        if (enclosing != null) return enclosing.get(name);
+        if (enclosing != null) {
+
+            return enclosing.get(name);
+        }
 
         throw new RuntimeError(name, "Undefined variable '" + name.getLiteral() + "'.");
     }
 
     public String getType(Token name){
-        if (dataTypes.containsKey(name.getLiteral())){
-            return dataTypes.get(name.getLiteral());
+        if (dataTypes.containsKey(name.getLiteral().toString())){
+            return dataTypes.get(name.getLiteral().toString());
         };
 
-        if (enclosing != null) return (String) enclosing.get(name);
+        if (enclosing != null) return enclosing.getType(name);
 
         throw new RuntimeError(name, "Undefined variable '" + name.getLiteral() + "'.");
     }

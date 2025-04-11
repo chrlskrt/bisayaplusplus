@@ -8,6 +8,8 @@ import com.example.bisayaplusplus.parser.Expr;
 import com.example.bisayaplusplus.parser.Stmt;
 import javafx.scene.control.TextArea;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
@@ -42,7 +44,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         System.out.println("assign value: " + value.getClass() + " " + value);
         String valueDataType = getValueDataType(expr.value, value);
         String destType = environment.getType(expr.name); // class for the destination variable
-
+        System.out.println(destType);
         value = getAdjustedValue(expr.value, value, expr.name, destType, valueDataType);
 
         environment.assign(expr.name, value);
@@ -268,7 +270,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         System.out.println("appending to output");
 
         if (taOutput != null){
-            taOutput.appendText(value.toString() + '\n');
+            taOutput.appendText(value.toString());
         } else {
             System.out.println(value.toString() + '\n');
         }
@@ -278,6 +280,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
     @Override
     public Object visitForLoopStmt(Stmt.ForLoop stmt) {
+
+        // we combine the initialization, condition, update and body into 1 block
+        Stmt newBody = new Stmt.Block(Arrays.asList(stmt.body, stmt.update));
+        Stmt whileBodyBlock = new Stmt.While(stmt.condition, newBody);
+        Stmt.Block forBlock = new Stmt.Block(Arrays.asList(stmt.initialization, whileBodyBlock));
+
+        executeBlock(forBlock.statements, new Environment(environment));
+
+        return null;
+    }
+
+    @Override
+    public Object visitWhileStmt(Stmt.While stmt) {
+        while (isTruthy(evaluate(stmt.condition))){
+            execute(stmt.body);
+        }
         return null;
     }
 
@@ -293,7 +311,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
             value = getAdjustedValue(stmt.initializer, value, stmt.name, stmt.dataType, valueDataType);
         }
 
-        environment.define((String) stmt.name.getLiteral(), stmt.dataType, value);
+        environment.define(stmt.name, stmt.dataType, value);
         return null;
     }
 

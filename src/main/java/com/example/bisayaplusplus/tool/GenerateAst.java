@@ -32,7 +32,10 @@ public class GenerateAst {
            "If         : Expr condition, Stmt thenBranch, List<ElseIf> elseIfBranch, Stmt elseBranch",
            "ElseIf     : Expr condition, Stmt thenBranch",
            "Print      : Expr expression",
-           "ForLoop    : List<Stmt> initialization, Expr condition, Expr update, Stmt body",
+           // for loop that allows multiple initializations
+//           "ForLoop    : List<Stmt> initialization, Expr condition, Expr update, Stmt body",
+           "ForLoop    : Stmt initialization, Expr condition, Stmt update, Stmt body",
+           "While      : Expr condition, Stmt body",
            "Var        : String dataType, Token name, Expr initializer"
         ));
     }
