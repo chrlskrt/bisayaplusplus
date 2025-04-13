@@ -266,14 +266,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
         Object value = evaluate(stmt.expression);
-        System.out.println(value.toString());
-        System.out.println("appending to output");
+//        System.out.println("appending to output");
 
-        if (taOutput != null){
-            taOutput.appendText(value.toString());
-        } else {
-            System.out.println(value.toString() + '\n');
-        }
+        taOutput.appendText(value.toString());
+//        if (taOutput != null){
+//            taOutput.appendText(value.toString());
+//        } else {
+//            System.out.println(value.toString() + '\n');
+//        }
 
         return null;
     }

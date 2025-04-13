@@ -106,6 +106,12 @@ public class Parser {
             return "IF";
         }
 
+        // While loop
+        if (matchToken(TokenType.WHILE_LOOP)){
+            statements.add(parseWhileLoopStmt());
+            return "WHILE LOOP";
+        }
+
         // For-loop
         if (matchToken(TokenType.FOR_LOOP)){
             statements.add(parseForLoopStmt());
@@ -155,9 +161,30 @@ public class Parser {
         return varDeclarations;
     }
 
+    //---------- Parsing WHILE LOOP --------------------
+    /* Syntax:
+     *
+     * MINTRAS (condition)
+     * PUNDOK {
+     *      -- statement*
+     * }
+     *
+     */
+    private Stmt parseWhileLoopStmt() throws ParserException {
+        expectAndConsumeToken(TokenType.LEFT_PAREN, "(", " WHILE LOOP.", false);
+        Expr condition = parseExpression();
+        expectAndConsumeToken(TokenType.RIGHT_PAREN, ")", " condition for WHILE LOOP.", false);
+
+        expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " WHILE LOOP declaration", false);
+
+        Stmt body = new Stmt.Block(parseBlock("WHILE_LOOP"));
+
+        return new Stmt.While(condition, body);
+    }
+
     //---------- Parsing FOR LOOP ---------------------
     private Stmt parseForLoopStmt() throws ParserException {
-        expectAndConsumeToken(TokenType.LEFT_PAREN, "(","ALANG SA.", false);
+        expectAndConsumeToken(TokenType.LEFT_PAREN, "("," ALANG SA.", false);
 
         // getting initialization statement
 //        // multiple initialization statements
@@ -487,6 +514,10 @@ public class Parser {
             throw new ParserException("Unexpected EOF while parsing. Expect '"+expToken+"' after " + afterWhat, getPrevToken().getLine());
         } else if (isAtEnd() && isEndOfStmt && expectedType == TokenType.NEW_LINE){
             throw new ParserException("Expect 'KATAPUSAN' at end of program.", getPrevToken().getLine() + 1);
+        } else if (isEndOfStmt && (expectedType == TokenType.NEW_LINE) && isCurrTokenType(TokenType.END_STMT)){
+            System.out.println("endende");
+            current--;
+            return advance();
         }
 
         if (isCurrTokenType(TokenType.COMMENT)){

@@ -29,7 +29,7 @@ public enum TokenType {
     START_STMT, END_STMT, CREATE_STMT, READ_STMT, PRINT_STMT,
 
     // control structures
-    IF, IF_ELSE, ELSE, FOR_LOOP, CODE_BLOCK,
+    IF, IF_ELSE, ELSE, FOR_LOOP, WHILE_LOOP, CODE_BLOCK,
 
     // special character
     NEW_LINE, CONCAT, CNEW_LINE, COMMENT

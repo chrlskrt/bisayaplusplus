@@ -55,9 +55,9 @@ public class InterpreterController {
         try {
             tokens = lexer.scanTokens();
 
-            for (Token t: tokens){
-                taOutput.appendText(t.toString() + "\n");
-            }
+//            for (Token t: tokens){
+//                taOutput.appendText(t.toString() + "\n");
+//            }
         } catch (LexerException e) {
             taOutput.appendText(e.getMessage());
             return;
@@ -81,9 +81,9 @@ public class InterpreterController {
             return;
         }
 
-        for (Stmt stmt : statements){
-            taOutput.appendText(stmt.toString() + '\n');
-        }
+//        for (Stmt stmt : statements){
+//            taOutput.appendText(stmt.toString() + '\n');
+//        }
 
         Interpreter interpreter = new Interpreter(statements);
         taOutput.appendText("OUTPUT:\n");

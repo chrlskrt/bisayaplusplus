@@ -56,6 +56,9 @@ public class Lexer {
             // FOR loop
             put("ALANG SA", TokenType.FOR_LOOP);
 
+            // WHILE LOOP
+            put("MINTRAS", TokenType.WHILE_LOOP);
+
             // LOGICAL operators
             put("O", TokenType.LOGIC_OR);
             put("DILI", TokenType.LOGIC_NOT);
