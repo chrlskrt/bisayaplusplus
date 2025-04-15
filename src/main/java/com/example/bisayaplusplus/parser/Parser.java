@@ -100,6 +100,12 @@ public class Parser {
             return "PRINT";
         }
 
+        // Read/Input statement
+        if (matchToken(TokenType.READ_STMT)){
+            statements.add(parseReadStatement());
+            return "READ";
+        }
+
         // If statement
         if (matchToken(TokenType.IF)) {
             statements.add(parseIfStmt());
@@ -128,10 +134,10 @@ public class Parser {
     // returns a list of statements that contains 1 or more variable declarations
     private List<Stmt> parseVarDeclaration(boolean isForLoopInit) throws ParserException {
         String dataType = switch (getCurrToken().getTokenType()) {
-            case INT_KEYWORD -> "integer";
-            case BOOL_KEYWORD -> "boolean";
-            case CHAR_KEYWORD -> "character";
-            case DOUBLE_KEYWORD -> "double";
+            case INT_KEYWORD -> "Integer";
+            case BOOL_KEYWORD -> "Boolean";
+            case CHAR_KEYWORD -> "Character";
+            case DOUBLE_KEYWORD -> "Double";
             default ->
                     throw new ParserException("Expected DATA_TYPE after 'MUGNA', but received " + getCurrToken().getTokenType() + " \"" + getCurrToken().getLiteral() + "\"", getCurrToken().getLine());
         };
@@ -279,10 +285,28 @@ public class Parser {
      * IPAKITA: {EXPR} (& {EXPR})*
      */
     private Stmt parsePrintStatement() throws ParserException {
-        expectAndConsumeToken(TokenType.COLON, ":", " IPAKITA statement.", false);
+        expectAndConsumeToken(TokenType.COLON, ":", " IPAKITA keyword.", false);
         Expr value = parseExpression();
         System.out.println("the value for print: " + astPrinter.print(value));
         return new Stmt.Print(value);
+    }
+
+    private Stmt parseReadStatement() throws ParserException {
+        expectAndConsumeToken(TokenType.COLON, ":", " DAWAT keyword.", false);
+
+        List<Token> variables = new ArrayList<>();
+
+        do {
+            Expr var = parsePrimary();
+
+            if (var instanceof Expr.Variable){
+                variables.add(((Expr.Variable) var).name);
+            } else {
+                throw new ParserException("Expect variable to store input.", getPrevToken().getLine());
+            }
+        } while (matchToken(TokenType.COMMA));
+
+        return new Stmt.Input(variables);
     }
 
     // for code blocks - code sulod sa PUNDOK {}
@@ -454,19 +478,19 @@ public class Parser {
 
         System.out.println("parsePrimary: " + getCurrToken().getLiteral() + getCurrToken().getTokenType());
         if (matchToken(TokenType.NULL)) return new Expr.Literal("null", "null");
-        if (matchToken(TokenType.BOOL_FALSE, TokenType.BOOL_TRUE)) return new Expr.Literal("boolean", getPrevToken().getLiteral());
+        if (matchToken(TokenType.BOOL_FALSE, TokenType.BOOL_TRUE)) return new Expr.Literal("Boolean", getPrevToken().getLiteral());
         if (matchToken(TokenType.NULL)) return new Expr.Literal("null", null);
-        if (matchToken(TokenType.CHARACTER)) return new Expr.Literal("character", getPrevToken().getLiteral());
-        if (matchToken(TokenType.INTEGER)) return new Expr.Literal("integer", getPrevToken().getLiteral());
-        if (matchToken(TokenType.DOUBLE)) return new Expr.Literal("double", getPrevToken().getLiteral());
-        if (matchToken(TokenType.STRING)) return new Expr.Literal("string", getPrevToken().getLiteral());
+        if (matchToken(TokenType.CHARACTER)) return new Expr.Literal("Character", getPrevToken().getLiteral());
+        if (matchToken(TokenType.INTEGER)) return new Expr.Literal("Integer", getPrevToken().getLiteral());
+        if (matchToken(TokenType.DOUBLE)) return new Expr.Literal("Double", getPrevToken().getLiteral());
+        if (matchToken(TokenType.STRING)) return new Expr.Literal("String", getPrevToken().getLiteral());
         if (matchToken(TokenType.ESCAPE_CHAR)) {
             char esc = (char) getPrevToken().getLiteral();
             return switch (esc) {
-                case 'r' -> new Expr.Literal("character", '\r');
-                case 'n' -> new Expr.Literal("character", '\n');
-                case 't' -> new Expr.Literal("character", '\t');
-                default -> new Expr.Literal("character", getPrevToken().getLiteral());
+                case 'r' -> new Expr.Literal("Character", '\r');
+                case 'n' -> new Expr.Literal("Character", '\n');
+                case 't' -> new Expr.Literal("Character", '\t');
+                default -> new Expr.Literal("Character", getPrevToken().getLiteral());
             };
         }
         if (matchToken(TokenType.IDENTIFIER)) {
@@ -483,7 +507,7 @@ public class Parser {
             System.out.println("return grouping");
             return new Expr.Grouping(expr);
         }
-        if (matchToken(TokenType.CNEW_LINE)) return new Expr.Literal("character", '\n');
+        if (matchToken(TokenType.CNEW_LINE)) return new Expr.Literal("Character", '\n');
 //        if (matchToken(TokenType.NEW_LINE)) throw new ParserException("Expected new statement in line. Every line should contain 1 statement.", getPrevToken().getLine());
 
         if (matchToken(TokenType.IF_ELSE, TokenType.ELSE)){

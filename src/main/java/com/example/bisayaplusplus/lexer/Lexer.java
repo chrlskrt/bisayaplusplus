@@ -114,14 +114,14 @@ public class Lexer {
                 break;
             case '-': // comment
                 if (charMatch('-')){
-                    if (checkPrevToken() != null && (checkPrevToken() == TokenType.IDENTIFIER || isIdentifierChar(getNextChar()))){
-                        addToken(TokenType.DECREMENT);
-                    } else {
+//                    if (checkPrevToken() != null && (checkPrevToken() == TokenType.IDENTIFIER || isIdentifierChar(getNextChar()))){
+//                        addToken(TokenType.DECREMENT);
+//                    } else {
                         while (!isAtEnd() && getNextChar() != '\n'){
                             getCurrCharThenNext();
                         }
 //                        addToken(TokenType.COMMENT);
-                    }
+//                    }
                 } else if (isUnaryToken()) {
                     addToken(TokenType.NEGATIVE); // unary operator
                 } else {

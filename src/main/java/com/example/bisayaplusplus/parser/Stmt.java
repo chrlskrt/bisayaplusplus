@@ -14,6 +14,7 @@ public abstract class Stmt {
     R visitForLoopStmt(ForLoop stmt);
     R visitWhileStmt(While stmt);
     R visitVarStmt(Var stmt);
+    R visitInputStmt(Input stmt);
   }
  public static class Block extends Stmt{
 
@@ -129,6 +130,18 @@ public abstract class Stmt {
     @Override
     public <R> R accept(Visitor<R> visitor) {
       return visitor.visitVarStmt(this);
+    }
+  }
+ public static class Input extends Stmt{
+
+    public final List<Token> variables;
+    public Input (List<Token> variables){
+      this.variables = variables;
+    }
+
+    @Override
+    public <R> R accept(Visitor<R> visitor) {
+      return visitor.visitInputStmt(this);
     }
   }
 

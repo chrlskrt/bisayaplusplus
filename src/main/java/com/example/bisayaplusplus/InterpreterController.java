@@ -9,6 +9,7 @@ import com.example.bisayaplusplus.parser.Parser;
 import com.example.bisayaplusplus.parser.Stmt;
 import javafx.event.ActionEvent;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import java.io.File;
@@ -86,14 +87,13 @@ public class InterpreterController {
 //        }
 
         Interpreter interpreter = new Interpreter(statements);
-        taOutput.appendText("OUTPUT:\n");
         try {
             interpreter.interpret(taOutput);
         } catch (RuntimeException e) {
 //            e.printStackTrace();
-            taOutput.setText(e.getMessage() + "\n");
+            taOutput.appendText(e.getMessage() + "\n");
         } catch (Exception e){
-            taOutput.setText("Runtime exception: " + e.getMessage() + "\n");
+            taOutput.appendText("Runtime exception: " + e.getMessage() + "\n");
         }
     }
 

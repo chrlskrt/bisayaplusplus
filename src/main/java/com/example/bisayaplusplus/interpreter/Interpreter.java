@@ -6,12 +6,11 @@ import com.example.bisayaplusplus.lexer.Token;
 import com.example.bisayaplusplus.lexer.TokenType;
 import com.example.bisayaplusplus.parser.Expr;
 import com.example.bisayaplusplus.parser.Stmt;
-import javafx.application.Platform;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     private final List<Stmt> statements;
@@ -27,6 +26,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     // goes through all the statements to interpret
     public void interpret(TextArea taOutput){
         this.taOutput = taOutput;
+
+        taOutput.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER){
+                e.consume(); // prevent newline in TextArea
+
+                String lastLine = getLastLine();
+
+                if (inputFuture != null && !inputFuture.isDone())
+                    inputFuture.complete(lastLine);
+            }
+        });
+
         for (Stmt stmt : statements){
             execute(stmt);
         }
@@ -320,6 +331,30 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         return null;
     }
 
+    private CompletableFuture<String> inputFuture;
+    @Override
+    public Object visitInputStmt(Stmt.Input stmt) {
+        List<Token> variables = stmt.variables;
+        taOutput.setEditable(true);
+
+
+
+//        String input = awaitInput();
+//        taOutput.appendText(input);
+        return null;
+    }
+
+//    private String awaitInput(){
+//        inputFuture = new CompletableFuture<>();
+//        return inputFuture.join();
+//    }
+
+    private String getLastLine(){
+        String[] lines = taOutput.getText().split("\n");
+
+        return lines[lines.length - 1];
+    }
+
     /*
      * Returns the data type of the assigned value to a variable
      * @param valueExpr - the initializer part of variable declaration or assignment declarations e.g. DATATYPE IDENTIFIER = INITIALIZER (NUMERO C = 5)
@@ -331,7 +366,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         if (valueExpr instanceof Expr.Literal){
             valueDataType = ((Expr.Literal) valueExpr).dataType;
         } else {
-            valueDataType = value.getClass().getSimpleName().toLowerCase();
+            valueDataType = value.getClass().getSimpleName();
         }
 
         return valueDataType;
@@ -348,20 +383,30 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     private Object getAdjustedValue(Expr valueExpr, Object origValue, Token variable, String varDataType, String valueDataType){
         Object value = origValue;
 
-        if (varDataType.equals("double") && valueDataType.equals("integer")){
+        if (varDataType.equals("Double") && valueDataType.equals("Integer")){
             value = ((Number) origValue).doubleValue();
-        } else if (varDataType.equals("integer") && valueDataType.equals("double") && !(valueExpr instanceof Expr.Literal)){
+        } else if (varDataType.equals("Integer") && valueDataType.equals("Double") && !(valueExpr instanceof Expr.Literal)){
             value = ((Number) origValue).intValue();
-        } else if (valueDataType.equals("boolean") && !(valueExpr instanceof Expr.Literal)){
+        } else if (valueDataType.equals("Boolean") && !(valueExpr instanceof Expr.Literal)){
             if ((boolean) origValue){
                 value = "OO";
             } else {
                 value = "DILI";
             }
         } else if (!varDataType.equals(valueDataType)) {
-            throw new TypeError(variable, valueDataType, variable.getLiteral().toString(), varDataType);
+            throw new TypeError(variable, bisTypes.get(valueDataType), variable.getLiteral().toString(), bisTypes.get(varDataType));
         }
 
         return value;
     }
+
+    private Map<String, String> bisTypes = new HashMap<>(){
+        {
+            put("Integer", "NUMERO");
+            put("Double", "TIPIK");
+            put("Character", "LETRA");
+            put("Boolean", "TINUOD");
+            put("String", "PULONG");
+        }
+    };
 }
