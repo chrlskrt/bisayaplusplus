@@ -29,6 +29,9 @@ public class Environment {
 
     public Object get(Token name){
         if (values.containsKey(name.getLiteral())){
+            if (values.get(name.getLiteral()) == null){
+                throw new RuntimeError(name, "Variable " + name.getLiteral() + " might not have been initialized.");
+            }
             return values.get(name.getLiteral());
         };
 

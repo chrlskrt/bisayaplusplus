@@ -6,6 +6,7 @@ import com.example.bisayaplusplus.lexer.Token;
 import com.example.bisayaplusplus.lexer.TokenType;
 import com.example.bisayaplusplus.parser.Expr;
 import com.example.bisayaplusplus.parser.Stmt;
+import javafx.application.Platform;
 import javafx.scene.control.TextArea;
 
 import java.util.ArrayList;
@@ -268,12 +269,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         Object value = evaluate(stmt.expression);
 //        System.out.println("appending to output");
 
-        taOutput.appendText(value.toString());
+//        Platform.runLater(() -> {
+            taOutput.appendText(value == null ? "null" : value.toString());
+//        });
+//        taOutput.appendText(value.toString());
 //        if (taOutput != null){
 //            taOutput.appendText(value.toString());
 //        } else {
 //            System.out.println(value.toString() + '\n');
 //        }
+
 
         return null;
     }

@@ -91,7 +91,7 @@ public class Parser {
         // Variable declarations
         if (matchToken(TokenType.CREATE_STMT)) {
             statements.addAll(parseVarDeclaration(false));
-            return "CREATE";
+            return "VARIABLE DECLARATION";
         }
 
         // Print statement
@@ -453,6 +453,7 @@ public class Parser {
         }
 
         System.out.println("parsePrimary: " + getCurrToken().getLiteral() + getCurrToken().getTokenType());
+        if (matchToken(TokenType.NULL)) return new Expr.Literal("null", "null");
         if (matchToken(TokenType.BOOL_FALSE, TokenType.BOOL_TRUE)) return new Expr.Literal("boolean", getPrevToken().getLiteral());
         if (matchToken(TokenType.NULL)) return new Expr.Literal("null", null);
         if (matchToken(TokenType.CHARACTER)) return new Expr.Literal("character", getPrevToken().getLiteral());

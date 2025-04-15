@@ -59,6 +59,9 @@ public class Lexer {
             // WHILE LOOP
             put("MINTRAS", TokenType.WHILE_LOOP);
 
+            // null
+            put("null", TokenType.NULL);
+
             // LOGICAL operators
             put("O", TokenType.LOGIC_OR);
             put("DILI", TokenType.LOGIC_NOT);

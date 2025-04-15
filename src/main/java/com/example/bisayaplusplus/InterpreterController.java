@@ -59,10 +59,10 @@ public class InterpreterController {
 //                taOutput.appendText(t.toString() + "\n");
 //            }
         } catch (LexerException e) {
-            taOutput.appendText(e.getMessage());
+            taOutput.setText(e.getMessage() + "\n");
             return;
         } catch (Exception e){
-            taOutput.appendText("Lexer exception: " + e.getMessage());
+            taOutput.setText("Lexer exception: " + e.getMessage() + "\n");
             e.printStackTrace();
             return;
         }
@@ -73,10 +73,10 @@ public class InterpreterController {
         try {
             statements = parser.parse();
         } catch (ParserException e){
-            taOutput.appendText(e.getMessage());
+            taOutput.setText(e.getMessage() + "\n");
             return;
         } catch (Exception e){
-            taOutput.appendText("Parser exception: " + e.getMessage());
+            taOutput.setText("Parser exception: " + e.getMessage() + "\n");
             e.printStackTrace();
             return;
         }
@@ -89,9 +89,11 @@ public class InterpreterController {
         taOutput.appendText("OUTPUT:\n");
         try {
             interpreter.interpret(taOutput);
-        } catch (Exception e){
+        } catch (RuntimeException e) {
 //            e.printStackTrace();
-            taOutput.appendText("Runtime exception: " + e.getMessage());
+            taOutput.setText(e.getMessage() + "\n");
+        } catch (Exception e){
+            taOutput.setText("Runtime exception: " + e.getMessage() + "\n");
         }
     }
 
