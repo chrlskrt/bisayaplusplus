@@ -4,4 +4,8 @@ IPAKITA: "Enter x: " & $
 DAWAT: X
 IPAKITA: X & $
 IPAKITA: X + 5
+MUGNA NUMERO Y, Z
+IPAKITA: "Enter y, z: "
+DAWAT: Y, Z
+IPAKITA: Y & " " & Z
 KATAPUSAN

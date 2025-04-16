@@ -17,6 +17,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     private Environment environment;
     private TextArea taOutput;
     private Thread interpreterThread;
+    private String currentOutput;
 
     public Interpreter (List<Stmt> statements){
         this.statements = statements;
@@ -32,7 +33,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
             if (e.getCode() == KeyCode.ENTER){
                 e.consume(); // prevent newline in TextArea
 
-                String lastLine = getLastLine();
+                String lastLine = getInput(currentOutput);
 
                 if (inputFuture != null && !inputFuture.isDone())
                     inputFuture.complete(lastLine);
@@ -369,9 +370,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     @Override
     public Object visitInputStmt(Stmt.Input stmt) {
         List<Token> variables = stmt.variables;
+        currentOutput = taOutput.getText();
         taOutput.setEditable(true);
-
-
 
         String input = awaitInput();
 //        taOutput.appendText(input);
@@ -399,10 +399,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         return inputFuture.join();
     }
 
-    private String getLastLine(){
-        String[] lines = taOutput.getText().split("\n");
+    private String getInput(String currentOutput){
+        String input = taOutput.getText();
+        String adjustedInput = input.substring(currentOutput.length());
 
-        return lines[lines.length - 1];
+        return adjustedInput.replaceAll("^[\\n\\r]+", "")    // remove leading newlines
+                .replaceAll("[\\n\\r]+$", "")    // remove trailing newlines
+                .trim();
     }
 
     /*
