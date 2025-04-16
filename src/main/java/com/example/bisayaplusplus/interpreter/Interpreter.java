@@ -6,9 +6,9 @@ import com.example.bisayaplusplus.lexer.Token;
 import com.example.bisayaplusplus.lexer.TokenType;
 import com.example.bisayaplusplus.parser.Expr;
 import com.example.bisayaplusplus.parser.Stmt;
+import javafx.application.Platform;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
-
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -16,6 +16,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     private final List<Stmt> statements;
     private Environment environment;
     private TextArea taOutput;
+    private Thread interpreterThread;
 
     public Interpreter (List<Stmt> statements){
         this.statements = statements;
@@ -38,9 +39,29 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
             }
         });
 
-        for (Stmt stmt : statements){
-            execute(stmt);
-        }
+//        interpreterThread = new Thread(()->{
+//            for (Stmt stmt : statements){
+//                execute(stmt);
+//            }
+//        });
+
+        interpreterThread = new Thread(() -> {
+            try {
+                for (Stmt stmt : statements) {
+                    execute(stmt);
+                }
+            } catch (RuntimeError | TypeError e) {
+                Platform.runLater(() -> {
+                    taOutput.appendText(e.getMessage());
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    taOutput.appendText("RuntimeError: " + e.getMessage());
+                });
+            }
+        });
+
+        interpreterThread.start();
     }
 
     public void interpret(){
@@ -68,21 +89,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     public Object visitBinaryExpr(Expr.Binary expr) {
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
+        Number result = null;
 
         switch (expr.operator.getTokenType()){
             case MINUS:
                 checkNumberOperands(expr.operator, left, right, "SUBTRACTION");
-                return ((Number) left).doubleValue() -  ((Number) right).doubleValue();
+                result = ((Number) left).doubleValue() -  ((Number) right).doubleValue();
+                break;
             case DIVIDE:
                 checkNumberOperands(expr.operator, left, right, "DIVISION");
                 System.out.println(6.6/2.2);
-                return ((Number) left).doubleValue() /  ((Number) right).doubleValue();
+                result = ((Number) left).doubleValue() /  ((Number) right).doubleValue();
+                break;
             case MULTIPLY:
                 checkNumberOperands(expr.operator, left, right, "MULTIPLICATION");
-                return ((Number) left).doubleValue() *  ((Number) right).doubleValue();
+                result = ((Number) left).doubleValue() *  ((Number) right).doubleValue();
+                break;
             case PLUS:
                 if (left instanceof Number && right instanceof Number){
-                    return ((Number) left).doubleValue() +  ((Number) right).doubleValue();
+                    result = ((Number) left).doubleValue() +  ((Number) right).doubleValue();
+                    break;
                 }
 
                 if (left instanceof String && right instanceof String){
@@ -91,6 +117,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
                 throw new RuntimeError(expr.operator, "ADDITION: Operands must be of the same data type.");
             case CONCAT: return left.toString() + right.toString();
+        }
+
+        if (left instanceof Double || right instanceof Double){
+            return result;
+        }
+
+        if (result != null){
+            return result.intValue();
         }
 
         return null;
@@ -339,15 +373,31 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
 
 
-//        String input = awaitInput();
+        String input = awaitInput();
 //        taOutput.appendText(input);
+        taOutput.setEditable(false);
+
+        String[] inputs = input.split(",");
+
+        if (inputs.length < variables.size()){
+            throw new RuntimeError(variables.get(0), "Received less inputs than needed.");
+        }
+
+        try {
+            for (int i = 0; i < variables.size(); i++){
+                environment.assignFromPrint(variables.get(i), inputs[i]);
+            }
+        } catch (ArrayIndexOutOfBoundsException e){
+            throw new RuntimeError(variables.get(0), "Received more inputs than needed. Received: " + inputs.length);
+        }
+
         return null;
     }
 
-//    private String awaitInput(){
-//        inputFuture = new CompletableFuture<>();
-//        return inputFuture.join();
-//    }
+    private String awaitInput(){
+        inputFuture = new CompletableFuture<>();
+        return inputFuture.join();
+    }
 
     private String getLastLine(){
         String[] lines = taOutput.getText().split("\n");

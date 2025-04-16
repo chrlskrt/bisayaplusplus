@@ -87,14 +87,14 @@ public class InterpreterController {
 //        }
 
         Interpreter interpreter = new Interpreter(statements);
-        try {
+//        try {
             interpreter.interpret(taOutput);
-        } catch (RuntimeException e) {
-//            e.printStackTrace();
-            taOutput.appendText(e.getMessage() + "\n");
-        } catch (Exception e){
-            taOutput.appendText("Runtime exception: " + e.getMessage() + "\n");
-        }
+//        } catch (RuntimeException e) {
+////            e.printStackTrace();
+//            taOutput.appendText(e.getMessage() + "\n");
+//        } catch (Exception e){
+//            taOutput.appendText("Runtime exception: " + e.getMessage() + "\n");
+//        }
     }
 
     public void openFile(ActionEvent actionEvent) {

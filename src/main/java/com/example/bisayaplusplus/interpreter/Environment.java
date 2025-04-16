@@ -66,6 +66,40 @@ public class Environment {
 
         throw new RuntimeError(name, "Undefined variable '" + name.getLiteral().toString() + "'.");
     }
+
+    public void assignFromPrint(Token var, String value){
+        String varDataType = dataTypes.get(var.getLiteral().toString());
+        Object adjustedValue = null;
+
+        try {
+            switch (varDataType){
+                case "Integer":
+                    adjustedValue = Integer.parseInt(value);
+                    break;
+                case "Double":
+                    adjustedValue = Double.parseDouble(value);
+                    break;
+                case "Boolean":
+                    if (value.equals("\"OO\"") || value.equals("OO") ){
+                        adjustedValue = "OO";
+                    } else if (value.equals("DILI") || value.equals("\"DILI\"")){
+                        adjustedValue = "DILI";
+                    }
+                    break;
+                case "Character":
+                    if (value.length() == 1){
+                        adjustedValue = value.charAt(0);
+                    };
+                    break;
+                default:
+                    throw new RuntimeError(var, "Incompatible input for variable " + var.getLiteral() + " with type " + varDataType + ".");
+            }
+        } catch (NumberFormatException n){
+            throw new RuntimeError(var, "Expect number but received " + value);
+        }
+
+        assign(var, adjustedValue);
+    }
     
     public void print(){
         for (String key: values.keySet()){
