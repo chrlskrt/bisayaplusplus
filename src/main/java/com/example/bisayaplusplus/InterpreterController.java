@@ -2,11 +2,14 @@ package com.example.bisayaplusplus;
 
 import com.example.bisayaplusplus.exception.LexerException;
 import com.example.bisayaplusplus.exception.ParserException;
+import com.example.bisayaplusplus.exception.RuntimeError;
+import com.example.bisayaplusplus.exception.TypeError;
 import com.example.bisayaplusplus.interpreter.Interpreter;
 import com.example.bisayaplusplus.lexer.Lexer;
 import com.example.bisayaplusplus.lexer.Token;
 import com.example.bisayaplusplus.parser.Parser;
 import com.example.bisayaplusplus.parser.Stmt;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyEvent;
@@ -24,6 +27,7 @@ public class InterpreterController {
     public TextArea taOutput;
     public TextArea taLineNumbers;
     private Stage stage;
+    private Interpreter interpreter;
 
     public void initialize(){
         taInput.textProperty().addListener((observable, oldText, newText)->{
@@ -86,15 +90,26 @@ public class InterpreterController {
 //            taOutput.appendText(stmt.toString() + '\n');
 //        }
 
-        Interpreter interpreter = new Interpreter(statements);
-//        try {
-            interpreter.interpret(taOutput);
-//        } catch (RuntimeException e) {
-////            e.printStackTrace();
-//            taOutput.appendText(e.getMessage() + "\n");
-//        } catch (Exception e){
-//            taOutput.appendText("Runtime exception: " + e.getMessage() + "\n");
-//        }
+        interpreter = new Interpreter(statements);
+
+        Thread interpreterThread = new Thread(() -> {
+            try {
+                interpreter.interpret(taOutput);
+            } catch (RuntimeError | TypeError e) {
+                Platform.runLater(() -> {
+                    taOutput.appendText(e.getMessage());
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    taOutput.appendText("RuntimeError: " + e.getMessage());
+                });
+            }
+        });
+
+//        interpreter.interpret(taOutput);
+
+        interpreterThread.setDaemon(true);
+        interpreterThread.start();
     }
 
     public void openFile(ActionEvent actionEvent) {
@@ -157,6 +172,13 @@ public class InterpreterController {
             } catch (IOException e){
                 taOutput.setText("Error saving file.");
             }
+        }
+    }
+
+    public void stopInterpreter(ActionEvent actionEvent) {
+        if (interpreter != null){
+            interpreter.stopInterpreting();
+            taOutput.appendText("\nExecution stopped.");
         }
     }
 }

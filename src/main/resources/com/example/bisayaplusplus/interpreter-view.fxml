@@ -13,8 +13,9 @@
                   <HBox prefHeight="25.0" prefWidth="454.0" spacing="10.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                      <children>
                         <Button focusTraversable="false" mnemonicParsing="false" onAction="#runInterpreter" text="Run" />
+                        <Button fx:id="btnStop" focusTraversable="false" mnemonicParsing="false" onAction="#stopInterpreter" text="Stop" />
                         <Button focusTraversable="false" mnemonicParsing="false" onAction="#openFile" text="Open File" />
-                        <Button fx:id="btnSaveFile" mnemonicParsing="false" onAction="#saveFile" text="Save" />
+                        <Button fx:id="btnSaveFile" focusTraversable="false" mnemonicParsing="false" onAction="#saveFile" text="Save" />
                      </children>
                   </HBox>
                   <HBox layoutY="25.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
@@ -42,7 +43,7 @@
                               <Font size="16.0" />
                            </font>
                         </Label>
-                        <TextArea fx:id="taOutput" editable="false" focusTraversable="false" prefHeight="460.0" prefWidth="293.0" VBox.vgrow="ALWAYS">
+                        <TextArea fx:id="taOutput" editable="false" focusTraversable="false" prefHeight="460.0" prefWidth="293.0" wrapText="true" VBox.vgrow="ALWAYS">
                            <font>
                               <Font size="16.0" />
                            </font>

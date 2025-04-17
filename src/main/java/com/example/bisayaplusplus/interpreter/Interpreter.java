@@ -18,10 +18,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     private TextArea taOutput;
     private Thread interpreterThread;
     private String currentOutput;
+    private boolean shouldStop;
 
     public Interpreter (List<Stmt> statements){
         this.statements = statements;
         environment = new Environment();
+        shouldStop = false;
     }
 
     // function for interpreting
@@ -40,35 +42,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
             }
         });
 
-//        interpreterThread = new Thread(()->{
-//            for (Stmt stmt : statements){
-//                execute(stmt);
-//            }
-//        });
-
-        interpreterThread = new Thread(() -> {
-            try {
-                for (Stmt stmt : statements) {
-                    execute(stmt);
-                }
-            } catch (RuntimeError | TypeError e) {
-                Platform.runLater(() -> {
-                    taOutput.appendText(e.getMessage());
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> {
-                    taOutput.appendText("RuntimeError: " + e.getMessage());
-                });
-            }
-        });
-
-        interpreterThread.start();
+        for (Stmt stmt : statements) {
+            if (shouldStop) break;
+            execute(stmt);
+        }
     }
 
     public void interpret(){
         for (Stmt stmt : statements){
             execute(stmt);
         }
+    }
+
+    public void stopInterpreting(){
+        shouldStop = true;
     }
 
     @Override
@@ -315,16 +302,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         Object value = evaluate(stmt.expression);
 //        System.out.println("appending to output");
 
-//        Platform.runLater(() -> {
-            taOutput.appendText(value == null ? "null" : value.toString());
-//        });
-//        taOutput.appendText(value.toString());
-//        if (taOutput != null){
-//            taOutput.appendText(value.toString());
-//        } else {
-//            System.out.println(value.toString() + '\n');
-//        }
+        String output = (value == null ? "null" :  value.toString());
 
+        Platform.runLater(() -> {
+            taOutput.appendText(output);
+        });
+
+        // Give JavaFX time to update
+        try {
+            Thread.sleep(10); // Short sleep to allow UI thread to catch up
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Restore interrupted status
+        }
 
         return null;
     }
@@ -345,6 +334,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     @Override
     public Object visitWhileStmt(Stmt.While stmt) {
         while (isTruthy(evaluate(stmt.condition))){
+            if (shouldStop) break;
             execute(stmt.body);
         }
         return null;
@@ -380,7 +370,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         String[] inputs = input.split(",");
 
         if (inputs.length < variables.size()){
-            throw new RuntimeError(variables.get(0), "Received less inputs than needed.");
+            throw new RuntimeError(variables.get(0), "Received less inputs than needed. Expect " + variables.size() + ", but received " + inputs.length + ".");
         }
 
         try {
@@ -388,7 +378,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
                 environment.assignFromPrint(variables.get(i), inputs[i]);
             }
         } catch (ArrayIndexOutOfBoundsException e){
-            throw new RuntimeError(variables.get(0), "Received more inputs than needed. Received: " + inputs.length);
+            throw new RuntimeError(variables.get(0), "Received more inputs than needed. Received " + inputs.length + ", expect " + variables.size());
         }
 
         return null;

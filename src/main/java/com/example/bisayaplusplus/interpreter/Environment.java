@@ -95,7 +95,7 @@ public class Environment {
                     throw new RuntimeError(var, "Incompatible input for variable " + var.getLiteral() + " with type " + varDataType + ".");
             }
         } catch (NumberFormatException n){
-            throw new RuntimeError(var, "Expect number but received " + value);
+            throw new RuntimeError(var, "Expect " + varDataType + " but received " + value);
         }
 
         assign(var, adjustedValue);
