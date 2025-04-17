@@ -1,0 +1,41 @@
+
+
+-- dfdjf
+
+
+SUGOD
+
+	MUGNA NUMERO X = 1
+
+	IPAKITA: "X: " & X
+
+	X++
+
+	IPAKITA: "X: " & X
+
+	++X
+
+	IPAKITA: "X: " & X
+
+	--X
+
+	IPAKITA: "X: " & X
+
+	X-- -- OJ N
+
+	-- JDSFNJD
+
+	IPAKITA: "X: " & X 
+	
+	KUNG (X >= 1)
+
+	PUNDOK {
+
+		IPAKITA: "HALA"
+
+	}
+
+KATAPUSAN
+
+
+

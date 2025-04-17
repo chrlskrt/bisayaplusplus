@@ -18,6 +18,7 @@ public class BisayaPlusPlusInterpreter extends Application {
         stage.setTitle("Bisaya++ Interpreter");
         stage.setScene(scene);
         stage.show();
+        ic.initialize();
     }
 
     public static void main(String[] args) {

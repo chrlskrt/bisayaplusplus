@@ -1,35 +1,122 @@
 package com.example.bisayaplusplus;
 
+import com.example.bisayaplusplus.exception.LexerException;
+import com.example.bisayaplusplus.exception.ParserException;
+import com.example.bisayaplusplus.exception.RuntimeError;
+import com.example.bisayaplusplus.exception.TypeError;
+import com.example.bisayaplusplus.interpreter.Interpreter;
+import com.example.bisayaplusplus.lexer.Lexer;
+import com.example.bisayaplusplus.lexer.Token;
+import com.example.bisayaplusplus.parser.Parser;
+import com.example.bisayaplusplus.parser.Stmt;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class InterpreterController {
     public TextArea taInput;
     public TextArea taOutput;
-    List<String> inputProgram = new ArrayList<>();
+    public TextArea taLineNumbers;
     private Stage stage;
+    private Interpreter interpreter;
 
-    public void runInterpreter(ActionEvent actionEvent) {
-        inputProgram = Arrays.asList(taInput.getText().split("\n")); // splitting the input by line
-        for (String s : inputProgram) {
-            taOutput.appendText(s + "\n");
-        }
+    public void initialize(){
+        taInput.textProperty().addListener((observable, oldText, newText)->{
+            updateLineNumbers();
+        });
+
+        taInput.scrollTopProperty().addListener((observable, oldText, newText)->{
+            taLineNumbers.setScrollTop(newText.doubleValue());
+        });
+
+        updateLineNumbers();
     }
 
-    public void openFile(ActionEvent actionEvent) throws IOException {
+    public void updateLineNumbers() {
+        int lines = taInput.getText().split("\n", -1).length;
+        StringBuilder lineNumbers = new StringBuilder();
+        taLineNumbers.clear();
+        for (int i = 1; i <= lines; i++) {
+            lineNumbers.append(i).append('\n');
+        }
+        taLineNumbers.setText(lineNumbers.toString());
+        taLineNumbers.setScrollTop(taInput.getScrollTop());
+    }
+
+    public void runInterpreter(ActionEvent actionEvent) {
+        Lexer lexer = new Lexer(taInput.getText());
+        List <Token> tokens;
+
+        taOutput.setText("");
+        try {
+            tokens = lexer.scanTokens();
+
+//            for (Token t: tokens){
+//                taOutput.appendText(t.toString() + "\n");
+//            }
+        } catch (LexerException e) {
+            taOutput.setText(e.getMessage() + "\n");
+            return;
+        } catch (Exception e){
+            taOutput.setText("Lexer exception: " + e.getMessage() + "\n");
+            e.printStackTrace();
+            return;
+        }
+
+        Parser parser = new Parser(tokens);
+        List<Stmt> statements;
+
+        try {
+            statements = parser.parse();
+        } catch (ParserException e){
+            taOutput.setText(e.getMessage() + "\n");
+            return;
+        } catch (Exception e){
+            taOutput.setText("Parser exception: " + e.getMessage() + "\n");
+            e.printStackTrace();
+            return;
+        }
+
+//        for (Stmt stmt : statements){
+//            taOutput.appendText(stmt.toString() + '\n');
+//        }
+
+        interpreter = new Interpreter(statements);
+
+        Thread interpreterThread = new Thread(() -> {
+            try {
+                interpreter.interpret(taOutput);
+            } catch (RuntimeError | TypeError e) {
+                Platform.runLater(() -> {
+                    taOutput.appendText(e.getMessage());
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    taOutput.appendText("RuntimeError: " + e.getMessage());
+                });
+            }
+        });
+
+//        interpreter.interpret(taOutput);
+
+        interpreterThread.setDaemon(true);
+        interpreterThread.start();
+    }
+
+    public void openFile(ActionEvent actionEvent) {
         FileChooser fileChooser = new FileChooser();
         // File to open will be filtered to .txt
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Text Files", "*.txt")
+                new FileChooser.ExtensionFilter("Text Files", "*.txt", "*.bpp")
         );
 
         // OpenDialog - choosing file
@@ -46,7 +133,7 @@ public class InterpreterController {
         taInput.clear();
 
         // Reading content of file
-        List<String> content = null;
+        List<String> content;
         try {
             content = Files.readAllLines(Path.of(file.toString()));
         } catch (IOException e) {
@@ -59,8 +146,39 @@ public class InterpreterController {
         }
     }
 
-    // ignore
+    // ux purposes
     void setStage(Stage stage){
         this.stage = stage;
+    }
+
+    public void saveFile(ActionEvent actionEvent) throws IOException {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Bisaya++ File");
+
+        // Set default file name
+        fileChooser.setInitialFileName("BisayaCode.bpp");
+
+        // set extension filter
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Bisaya++ Files", "*.bpp", "*.txt")
+        );
+
+        File file = fileChooser.showSaveDialog(stage);
+
+        if (file != null){
+            try (FileWriter writer = new FileWriter(file)){
+                writer.write(taInput.getText());
+                System.out.println("File saved to: " + file.getAbsolutePath());
+            } catch (IOException e){
+                taOutput.setText("Error saving file.");
+            }
+        }
+    }
+
+    public void stopInterpreter(ActionEvent actionEvent) {
+        if (interpreter != null){
+            interpreter.stopInterpreting();
+            taOutput.appendText("\nExecution stopped.");
+        }
     }
 }

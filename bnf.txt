@@ -1,0 +1,65 @@
+*  = 0 or many occurrence
+? = 0 or 1 occurrence
++ = 1 or many occurrence
+
+<program>                → SUGOD NEWLINE <statements>? KATAPUSAN
+<statements>             →   (<var-dec-statement> 
+                                       | <print-statement>
+                                       | <if-statement>) NEWLINE
+                                       | <expr-statement>
+<var-dec-statement>      → keyword:MUGNA <datatype> IDENTIFIER ((“=” <expr-statement>)? | ((“,” IDENTIFIER)* | (“,” IDENTIFIER “=” <expr-statement>)*)? 
+
+<datatype>               → NUMERO | TIPIK | LETRA | TINUOD
+<print-statement>        → keyword.IPAKITA COLON <expr-statement> (& <expr-statement>)*
+
+<if-statement>           → keyword.KUNG LPAREN <logic-expr> RPAREN NEWLINE
+                                       <block> 
+                                       <else-if-statement>* 
+                                       <else-statement>?
+<else-if-statement>      → keyword.KUNG DILI LPAREN <logic-expr> RPAREN NEWLINE
+                                      <block>
+<else-statement>         → keyword.KUNG WALA NEWLINE
+                                      <block>
+<expr-statement>         → <assign-expr>
+<expr>                   → <logical-expr>
+                          | <equality-expr>
+                          | <comp-expr>
+                          | <term-expr>
+                          | <factor-expr>
+                          | <binary-expr>
+                          | <unary-expr>
+                          | <primary-expr>
+
+// assign expression
+<assign-expr>            → IDENTIFIER “=” <expr>
+
+// logical expressions
+<logical-expr>           → <logical-and-expr>? <logical-or-expr>
+<logical-or-expr>        → <logical-and-expr> (O <logical-and-expr>)* 
+<logical-and-expr>       → <equality-expr> (UG <equality-expr>)*
+<equality-expr>          → <comp-expr> ((“<>” | “==” ) <comp-expr>)*
+<comp-expr>              → <term-expr> ((“>” | “>=” | “<” | “<=”) <term-expr>)*
+
+// binary expressions
+<term-expr>              → <factor-expr> ((“-” | “+” | “&”) <factor-expr>)*
+<factor-expr>            → <unary-expr> ((“/” | “*” | “%”) <unary-expr>)*
+
+// unary expression - DILI will be stored as logical expr
+<unary-expr>             → (DILI | NEGATIVE | POSITIVE) <expr-unary> | <primary-expr>
+
+// increment/decrement expression
+<inc-expr>               → IDENTIFIER ++ | ++ IDENTIFIER
+<dec-expr>               → IDENTIFIER -- | -- IDENTIFIER
+
+// literal expr
+<primary-expr>           → (LITERALS INT | BOOL | CHAR | STR | NULL | DOUBLE)
+                           | LPAREN <expr> RPAREN
+                           | IDENTIFIER
+                           | CNEW_LINE
+                           | ESCAPE_CHAR
+
+
+// statement class
+Types: block, expr, if, elseif, print, var
+// expr class
+Types: assign, grouping, logical, binary, unary, literal, variable

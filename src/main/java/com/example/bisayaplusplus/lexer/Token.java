@@ -2,18 +2,29 @@ package com.example.bisayaplusplus.lexer;
 
 class Token {
     final TokenType type;
-    final String lexeme; // substrings
     final Object literal; // value
     final int line; // for error msg
 
-    public Token(TokenType type, String lexeme, Object literal, int line) {
+    public Token(TokenType type, Object literal, int line) {
         this.type = type;
-        this.lexeme = lexeme;
         this.literal = literal;
         this.line = line;
     }
 
+    @Override
     public String toString() {
-        return type + "substring: " + lexeme + "value: " + literal;
+        return literal + " : " + type + " @line " + line;
+    }
+
+    public Object getLiteral(){
+        return literal;
+    }
+
+    public TokenType getTokenType(){
+        return type;
+    }
+
+    public int getLine(){
+        return line;
     }
 }
