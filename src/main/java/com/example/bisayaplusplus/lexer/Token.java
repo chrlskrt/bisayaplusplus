@@ -1,6 +1,6 @@
 package com.example.bisayaplusplus.lexer;
 
-class Token {
+public class Token {
     final TokenType type;
     final Object literal; // value
     final int line; // for error msg

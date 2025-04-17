@@ -12,7 +12,6 @@ import com.example.bisayaplusplus.parser.Stmt;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.control.TextArea;
-import javafx.scene.input.KeyEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import java.io.File;
@@ -30,9 +29,7 @@ public class InterpreterController {
     private Interpreter interpreter;
 
     public void initialize(){
-        taInput.textProperty().addListener((observable, oldText, newText)->{
-            updateLineNumbers();
-        });
+        taInput.textProperty().addListener((observable, oldText, newText)-> updateLineNumbers());
 
         taInput.scrollTopProperty().addListener((observable, oldText, newText)->{
             taLineNumbers.setScrollTop(newText.doubleValue());
@@ -105,8 +102,6 @@ public class InterpreterController {
                 });
             }
         });
-
-//        interpreter.interpret(taOutput);
 
         interpreterThread.setDaemon(true);
         interpreterThread.start();
