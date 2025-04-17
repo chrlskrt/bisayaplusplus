@@ -4,6 +4,7 @@ public enum TokenType {
     // SINGLE CHARACTER
     LEFT_CURLY, RIGHT_CURLY, LEFT_PAREN, RIGHT_PAREN, UNDERSCORE,
     COLON, COMMA,
+  
     // operators
     NEGATIVE, POSITIVE,
     PLUS, MINUS, MULTIPLY, DIVIDE, EQUAL,
@@ -18,9 +19,6 @@ public enum TokenType {
     BOOL_TRUE, BOOL_FALSE, CHARACTER,
     NULL, ESCAPE_CHAR,
 
-    // logical operators
-    LOGIC_OR, LOGIC_NOT, LOGIC_AND,
-
     // RESERVED WORDS
     // data type
     INT_KEYWORD, DOUBLE_KEYWORD, CHAR_KEYWORD, BOOL_KEYWORD,
@@ -32,5 +30,8 @@ public enum TokenType {
     IF, IF_ELSE, ELSE, FOR_LOOP, WHILE_LOOP, CODE_BLOCK,
 
     // special character
-    NEW_LINE, CONCAT, CNEW_LINE, COMMENT
+    NEW_LINE, CONCAT, CNEW_LINE, COMMENT,
+      
+    // logical op
+    LOGIC_OR, LOGIC_NOT, LOGIC_AND,
 }

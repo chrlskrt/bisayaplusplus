@@ -1,9 +1,9 @@
 package com.example.bisayaplusplus.lexer;
 
-public class Token {
+class Token {
     final TokenType type;
-    final Object literal;
-    final int line;
+    final Object literal; // value
+    final int line; // for error msg
 
     public Token(TokenType type, Object literal, int line) {
         this.type = type;
