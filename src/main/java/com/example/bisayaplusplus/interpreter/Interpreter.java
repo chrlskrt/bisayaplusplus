@@ -31,6 +31,31 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     public void interpret(TextArea taOutput){
         this.taOutput = taOutput;
 
+        // Listener to keep cursor at the end and prevent edits to existing text
+        taOutput.textProperty().addListener((obs, oldText, newText) -> {
+            // If user tries to delete or modify the locked part
+            if (currentOutput != null){
+              if(!newText.startsWith(currentOutput)) {
+                taOutput.setText(oldText); // revert
+              } else {
+                // Allow typing only after the locked text
+                String typed = newText.substring(currentOutput.length());
+                taOutput.setText(currentOutput + typed);
+              }
+            }
+
+            // Force cursor to end
+            taOutput.positionCaret(taOutput.getText().length());
+        });
+
+        // to prevent mouse clicks
+        taOutput.setOnMouseClicked(e -> {
+            if (taOutput.getCaretPosition() < currentOutput.length()) {
+                taOutput.positionCaret(taOutput.getText().length());
+            }
+        });
+
+
         taOutput.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER){
                 e.consume(); // prevent newline in TextArea
