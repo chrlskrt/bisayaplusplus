@@ -27,6 +27,7 @@ public class InterpreterController {
     public TextArea taLineNumbers;
     private Stage stage;
     private Interpreter interpreter;
+    private boolean addedListener = false;
 
     public void initialize(){
         taInput.textProperty().addListener((observable, oldText, newText)-> updateLineNumbers());
@@ -53,7 +54,7 @@ public class InterpreterController {
         Lexer lexer = new Lexer(taInput.getText());
         List <Token> tokens;
 
-        taOutput.setText("");
+        taOutput.clear();
         try {
             tokens = lexer.scanTokens();
 
@@ -87,11 +88,12 @@ public class InterpreterController {
 //            taOutput.appendText(stmt.toString() + '\n');
 //        }
 
-        interpreter = new Interpreter(statements);
+        interpreter = new Interpreter(statements, addedListener, taOutput);
+        addedListener = true;
 
         Thread interpreterThread = new Thread(() -> {
             try {
-                interpreter.interpret(taOutput);
+                interpreter.interpret();
             } catch (RuntimeError | TypeError e) {
                 Platform.runLater(() -> {
                     taOutput.appendText(e.getMessage());

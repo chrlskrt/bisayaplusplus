@@ -15,38 +15,34 @@ import java.util.concurrent.CompletableFuture;
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     private final List<Stmt> statements;
     private Environment environment;
-    private TextArea taOutput;
-    private Thread interpreterThread;
+    private final TextArea taOutput;
     private String currentOutput;
     private boolean shouldStop;
 
-    public Interpreter (List<Stmt> statements){
+    public Interpreter (List<Stmt> statements, boolean addedListener, TextArea taOutput){
         this.statements = statements;
         environment = new Environment();
         shouldStop = false;
-    }
-
-    // function for interpreting
-    // goes through all the statements to interpret
-    public void interpret(TextArea taOutput){
         this.taOutput = taOutput;
 
-        // Listener to keep cursor at the end and prevent edits to existing text
-        taOutput.textProperty().addListener((obs, oldText, newText) -> {
-            // If user tries to delete or modify the locked part
-            if (currentOutput != null){
-              if(!newText.startsWith(currentOutput)) {
-                taOutput.setText(oldText); // revert
-              } else {
-                // Allow typing only after the locked text
-                String typed = newText.substring(currentOutput.length());
-                taOutput.setText(currentOutput + typed);
-              }
-            }
+        if (!addedListener){
+            // Listener to keep cursor at the end and prevent edits to existing text
+            taOutput.textProperty().addListener((obs, oldText, newText) -> {
+                // If user tries to delete or modify the locked part
+                if (currentOutput != null){
+                    if(!newText.startsWith(currentOutput)) {
+                        taOutput.setText(oldText); // revert
+                    } else {
+                        // Allow typing only after the locked text
+                        String typed = newText.substring(currentOutput.length());
+                        taOutput.setText(currentOutput + typed);
+                    }
+                }
 
-            // Force cursor to end
-            taOutput.positionCaret(taOutput.getText().length());
-        });
+                // Force cursor to end
+                taOutput.positionCaret(taOutput.getText().length());
+            });
+        }
 
         // to prevent mouse clicks
         taOutput.setOnMouseClicked(e -> {
@@ -66,17 +62,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
                     inputFuture.complete(lastLine);
             }
         });
-
-        for (Stmt stmt : statements) {
-            if (shouldStop) break;
-            execute(stmt);
-        }
     }
 
+    // function for interpreting
+    // goes through all the statements to interpret
     public void interpret(){
         for (Stmt stmt : statements){
             execute(stmt);
         }
+
+        currentOutput = null;
     }
 
     public void stopInterpreting(){

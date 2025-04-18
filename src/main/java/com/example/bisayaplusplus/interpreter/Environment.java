@@ -70,6 +70,7 @@ public class Environment {
     public void assignFromPrint(Token var, String value){
         String varDataType = dataTypes.get(var.getLiteral().toString());
         Object adjustedValue = null;
+        value = value.trim();
 
         try {
             switch (varDataType){
