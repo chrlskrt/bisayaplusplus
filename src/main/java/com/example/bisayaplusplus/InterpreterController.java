@@ -7,6 +7,7 @@ import com.example.bisayaplusplus.exception.TypeError;
 import com.example.bisayaplusplus.interpreter.Interpreter;
 import com.example.bisayaplusplus.lexer.Lexer;
 import com.example.bisayaplusplus.lexer.Token;
+import com.example.bisayaplusplus.parser.AstPrinter;
 import com.example.bisayaplusplus.parser.Parser;
 import com.example.bisayaplusplus.parser.Stmt;
 import javafx.application.Platform;
@@ -84,8 +85,9 @@ public class InterpreterController {
             return;
         }
 
+//        AstPrinter astPrinter = new AstPrinter();
 //        for (Stmt stmt : statements){
-//            taOutput.appendText(stmt.toString() + '\n');
+//            taOutput.appendText(stmt.toString());
 //        }
 
         interpreter = new Interpreter(statements, addedListener, taOutput);

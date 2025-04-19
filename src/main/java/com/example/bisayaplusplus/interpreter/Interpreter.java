@@ -46,7 +46,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
         // to prevent mouse clicks
         taOutput.setOnMouseClicked(e -> {
-            if (taOutput.getCaretPosition() < currentOutput.length()) {
+            if (currentOutput != null && taOutput.getCaretPosition() < currentOutput.length()) {
                 taOutput.positionCaret(taOutput.getText().length());
             }
         });
@@ -106,8 +106,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
                 break;
             case DIVIDE:
                 checkNumberOperands(expr.operator, left, right, "DIVISION");
-                System.out.println(6.6/2.2);
                 result = ((Number) left).doubleValue() /  ((Number) right).doubleValue();
+                break;
+            case MODULO:
+                checkNumberOperands(expr.operator, left, right, "MODULO");
+                result = ((Number) left).doubleValue() % ((Number) right).doubleValue();
                 break;
             case MULTIPLY:
                 checkNumberOperands(expr.operator, left, right, "MULTIPLICATION");
@@ -357,6 +360,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
             if (shouldStop) break;
             execute(stmt.body);
         }
+        return null;
+    }
+
+    @Override
+    public Object visitDoWhileStmt(Stmt.DoWhile stmt) {
+        do {
+            if (shouldStop) break;
+            execute(stmt.body);
+        } while(isTruthy(evaluate(stmt.condition)));
+
         return null;
     }
 

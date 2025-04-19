@@ -118,6 +118,12 @@ public class Parser {
             return "WHILE LOOP";
         }
 
+        // Do While loop
+        if (matchToken(TokenType.DO_WHILE_LOOP)){
+            statements.add(parseDoWhileLoopStmt());
+            return "DO WHILE LOOP";
+        }
+
         // For-loop
         if (matchToken(TokenType.FOR_LOOP)){
             statements.add(parseForLoopStmt());
@@ -186,6 +192,26 @@ public class Parser {
         Stmt body = new Stmt.Block(parseBlock("WHILE_LOOP"));
 
         return new Stmt.While(condition, body);
+    }
+
+    //---------- Parsing DO WHILE LOOP ----------------
+    /* Syntax:
+     *
+     * BUHATA
+     * PUNDOK {
+     *          // statements
+     * }
+     * MINTRAS (condition)
+     *
+     */
+    private Stmt parseDoWhileLoopStmt() throws ParserException {
+        expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", " 'BUHATA' for DO-WHILE loop", false);
+        Stmt body = new Stmt.Block(parseBlock("DO WHILE LOOP"));
+        expectAndConsumeToken(TokenType.WHILE_LOOP, "'MINTRAS'", " DO-WHILE BLOCK ", false);
+        expectAndConsumeToken(TokenType.LEFT_PAREN, "(", " WHILE LOOP.", false);
+        Expr condition = parseExpression();
+        expectAndConsumeToken(TokenType.RIGHT_PAREN, ")", " condition for WHILE LOOP.", false);
+        return new Stmt.DoWhile(condition, body);
     }
 
     //---------- Parsing FOR LOOP ---------------------
@@ -321,8 +347,8 @@ public class Parser {
             typeStmt = parseStatements(blockStatements);
 
             // for NEW_LINE after every statement
-            if (!typeStmt.equals("IF") && !typeStmt.equals("FOR LOOP")){
-                expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", typeStmt + " statement inside PUNDOK", false);
+            if (!typeStmt.equals("IF") && !typeStmt.equals("FOR LOOP") && !typeStmt.equals("WHILE LOOP")){
+                expectAndConsumeToken(TokenType.NEW_LINE, "NEW_LINE", typeStmt + " statement inside " + blockName + " PUNDOK", false);
             }
         }
 

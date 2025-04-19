@@ -36,6 +36,7 @@ public class GenerateAst {
 //           "ForLoop    : List<Stmt> initialization, Expr condition, Expr update, Stmt body",
            "ForLoop    : Stmt initialization, Expr condition, Stmt update, Stmt body",
            "While      : Expr condition, Stmt body",
+           "DoWhile    : Expr condition, Stmt body",
            "Var        : String dataType, Token name, Expr initializer",
            "Input      : List<Token> variables"
         ));

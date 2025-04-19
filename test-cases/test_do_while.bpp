@@ -1,0 +1,13 @@
+SUGOD
+	MUGNA NUMERO I = 0
+	BUHATA
+	PUNDOK {
+		KUNG (I % 2 == 0)
+		PUNDOK {
+			IPAKITA: I & $
+		}
+		I++
+	}
+	MINTRAS (I < 10)
+	
+KATAPUSAN

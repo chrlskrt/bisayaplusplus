@@ -13,6 +13,7 @@ public abstract class Stmt {
     R visitPrintStmt(Print stmt);
     R visitForLoopStmt(ForLoop stmt);
     R visitWhileStmt(While stmt);
+    R visitDoWhileStmt(DoWhile stmt);
     R visitVarStmt(Var stmt);
     R visitInputStmt(Input stmt);
   }
@@ -114,6 +115,20 @@ public abstract class Stmt {
     @Override
     public <R> R accept(Visitor<R> visitor) {
       return visitor.visitWhileStmt(this);
+    }
+  }
+ public static class DoWhile extends Stmt{
+
+    public final Expr condition;
+    public final Stmt body;
+    public DoWhile (Expr condition, Stmt body){
+      this.condition = condition;
+      this.body = body;
+    }
+
+    @Override
+    public <R> R accept(Visitor<R> visitor) {
+      return visitor.visitDoWhileStmt(this);
     }
   }
  public static class Var extends Stmt{

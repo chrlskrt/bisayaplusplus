@@ -59,6 +59,9 @@ public class Lexer {
             // WHILE LOOP
             put("MINTRAS", TokenType.WHILE_LOOP);
 
+            // DO-WHILE LOOP
+            put("BUHATA", TokenType.DO_WHILE_LOOP);
+
             // null
             put("null", TokenType.NULL);
 

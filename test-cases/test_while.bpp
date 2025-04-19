@@ -1,0 +1,8 @@
+SUGOD
+	MUGNA NUMERO I = 0
+	MINTRAS(I < 5)
+	PUNDOK {
+		IPAKITA: (I + 1) & $
+		I++
+	}
+KATAPUSAN
