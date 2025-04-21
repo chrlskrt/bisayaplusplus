@@ -477,6 +477,7 @@ public class Parser {
             Expr right = parseUnary();
 
             if (operator.getTokenType() == TokenType.LOGIC_NOT){
+                System.out.println("Logical NOT " + astPrinter.print(right));
                 return new Expr.Logical(null, operator, right);
             }
 

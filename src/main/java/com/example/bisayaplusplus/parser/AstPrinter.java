@@ -9,7 +9,7 @@ public class AstPrinter implements Expr.Visitor<String>{
 
     @Override
     public String visitAssignExpr(Expr.Assign expr) {
-        return null;
+        return parenthesize("ASSIGN " + expr.name.getLiteral() + " with ", expr.value);
     }
 
     @Override
@@ -53,6 +53,9 @@ public class AstPrinter implements Expr.Visitor<String>{
 
         builder.append("(").append(name);
         for (Expr expr: exprs){
+            if(expr == null){
+                continue;
+            }
             builder.append(" ");
             builder.append(expr.accept(this));
         }

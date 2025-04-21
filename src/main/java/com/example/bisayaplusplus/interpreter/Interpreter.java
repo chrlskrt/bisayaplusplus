@@ -127,7 +127,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
                 }
 
                 throw new RuntimeError(expr.operator, "ADDITION: Operands must be of the same data type.");
-            case CONCAT: return left.toString() + right.toString();
+            case CONCAT: return stringify(left) + stringify(right);
         }
 
         if (left instanceof Double || right instanceof Double){
@@ -148,6 +148,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
     @Override
     public Object visitLiteralExpr(Expr.Literal expr) {
+        if (expr.dataType.equals("Boolean")){
+            if (expr.value.equals("OO")) return true;
+            if (expr.value.equals("DILI")) return false;
+        }
         return expr.value;
     }
 
@@ -236,6 +240,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     private boolean isTruthy(Object object){
         if (object == null) return false;
         if (object instanceof Boolean) return (boolean) object;
+        if (object instanceof String){
+            if (object.equals("OO")){
+                return true;
+            }
+
+            return !object.equals("DILI");
+        }
+
         return true;
     }
 
@@ -325,7 +337,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         Object value = evaluate(stmt.expression);
 //        System.out.println("appending to output");
 
-        String output = (value == null ? "null" :  value.toString());
+        String output = (value == null ? "null" :  stringify(value));
 
         Platform.runLater(() -> {
             taOutput.appendText(output);
@@ -485,4 +497,17 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
             put("String", "PULONG");
         }
     };
+
+    private String stringify(Object object) {
+        if (object == null) return "null";
+
+        if (object instanceof Boolean) return (boolean) object ? "OO" : "DILI";
+
+        if (object instanceof Double) return object.toString();
+        if (object instanceof Integer) return object.toString();
+        if (object instanceof Character) return object.toString();
+        if (object instanceof String) return (String) object;
+
+        return object.toString();
+    }
 }
