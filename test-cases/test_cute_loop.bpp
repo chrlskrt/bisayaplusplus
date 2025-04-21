@@ -1,0 +1,14 @@
+SUGOD
+MUGNA NUMERO rawr=10
+ALANG SA(MUGNA NUMERO i=1, i < rawr, i++)
+PUNDOK{
+KUNG(i % 2 == 0)
+PUNDOK {
+IPAKITA: "isEven!" & $
+}
+KUNG WALA
+PUNDOK {
+IPAKITA: "isOdd D:" & $
+}
+}
+KATAPUSAN
