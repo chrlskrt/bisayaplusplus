@@ -412,20 +412,19 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 //        taOutput.appendText(input);
         taOutput.setEditable(false);
 
-        String[] inputs = input.split(",");
-
+        String[] inputs = input.split(",",-1);
+        System.out.println("inputs length: " + inputs.length);
         if (inputs.length < variables.size()){
             throw new RuntimeError(variables.get(0), "Received less inputs than needed. Expect " + variables.size() + ", but received " + inputs.length + ".");
         }
 
-        try {
-            for (int i = 0; i < variables.size(); i++){
-                environment.assignFromPrint(variables.get(i), inputs[i]);
-            }
-        } catch (ArrayIndexOutOfBoundsException e){
+        if (inputs.length > variables.size()){
             throw new RuntimeError(variables.get(0), "Received more inputs than needed. Received " + inputs.length + ", expect " + variables.size());
         }
 
+        for (int i = 0; i < variables.size(); i++){
+            environment.assignFromPrint(variables.get(i), inputs[i]);
+        }
         return null;
     }
 

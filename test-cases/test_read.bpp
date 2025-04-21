@@ -2,8 +2,7 @@ SUGOD
 MUGNA NUMERO X
 IPAKITA: "Enter x: " & $
 DAWAT: X
-IPAKITA: X & $
-IPAKITA: X + 5
+IPAKITA: X + 5 & $
 MUGNA NUMERO Y, Z
 IPAKITA: "Enter y, z: "
 DAWAT: Y, Z
