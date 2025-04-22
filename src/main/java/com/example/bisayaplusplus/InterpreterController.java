@@ -96,6 +96,7 @@ public class InterpreterController {
         Thread interpreterThread = new Thread(() -> {
             try {
                 interpreter.interpret();
+                taOutput.appendText("\n\nProgram Finished! No error!");
             } catch (RuntimeError | TypeError e) {
                 Platform.runLater(() -> {
                     taOutput.appendText(e.getMessage());
