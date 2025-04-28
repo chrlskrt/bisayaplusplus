@@ -1,0 +1,15 @@
+SUGOD
+	MUGNA NUMERO ctr
+	
+	KUNG (1==1)
+	PUNDOK {
+		MUGNA NUMERO ctr = 1
+		IPAKITA: ctr & $
+	}
+
+	ALANG SA (MUGNA NUMERO ctr=1, ctr<=10, ctr++)
+	PUNDOK{
+		MUGNA NUMERO i = 2
+        	IPAKITA: ctr & ' '
+    	}
+KATAPUSAN

@@ -275,7 +275,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
-        executeBlock(stmt.statements, new Environment(environment));
+        executeBlock(stmt.statements, new Environment(environment, new SymbolTable(environment.symbolTable)));
         return null;
     }
 
@@ -355,17 +355,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
     @Override
     public Object visitForLoopStmt(Stmt.ForLoop stmt) {
+        Environment prev = this.environment;
+        Environment forLoopEnv = new Environment(prev, new SymbolTable(prev.symbolTable));
 
-        // we combine the initialization, condition, update and body into 1 block
-        Stmt newBody = new Stmt.Block(Arrays.asList(stmt.body, stmt.update));
-        Stmt whileBodyBlock = new Stmt.While(stmt.condition, newBody);
-        Stmt.Block forBlock = new Stmt.Block(Arrays.asList(stmt.initialization, whileBodyBlock));
+        this.environment = forLoopEnv;
+        // initialize
+        execute(stmt.initialization);
 
-        executeBlock(forBlock.statements, new Environment(environment));
+        SymbolTable symbolTable = forLoopEnv.symbolTable;
 
+        while (isTruthy(evaluate(stmt.condition))){
+            // restart variables in forLoopEnv
+            environment.symbolTable = symbolTable;
+            executeBlock(((Stmt.Block) stmt.body).statements, this.environment);
+            execute(stmt.update);
+
+            // clear variables in forLoopEnv
+            symbolTable = new SymbolTable(symbolTable);
+        }
+
+        this.environment = prev;
         return null;
     }
-
     @Override
     public Object visitWhileStmt(Stmt.While stmt) {
         while (isTruthy(evaluate(stmt.condition))){
