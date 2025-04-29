@@ -247,6 +247,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
             return !object.equals("DILI");
         }
+        if (object instanceof Number){
+            if (((Number) object).doubleValue() == 0){
+                return false;
+            }
+        }
 
         return true;
     }
@@ -365,6 +370,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         SymbolTable symbolTable = forLoopEnv.symbolTable;
 
         while (isTruthy(evaluate(stmt.condition))){
+            if (shouldStop) break;
+
             // restart variables in forLoopEnv
             environment.symbolTable = symbolTable;
             executeBlock(((Stmt.Block) stmt.body).statements, this.environment);
