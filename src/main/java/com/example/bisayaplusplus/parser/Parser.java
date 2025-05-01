@@ -161,9 +161,7 @@ public class Parser {
             Token name = expectAndConsumeToken(TokenType.IDENTIFIER, "IDENTIFIER", "DATA_TYPE / COMMA.", false);
             Expr initializer = null;
             if (matchToken(TokenType.EQUAL)){
-                System.out.println(name.getLiteral() + " has initialized value");
                 initializer = parseExpression();
-                System.out.println(name.getLiteral() + " is initialized with " + astPrinter.print(initializer));
             }
 
             varDeclarations.add(new Stmt.Var(dataType, name, initializer));
@@ -452,7 +450,6 @@ public class Parser {
             Expr right = parseUnary();
 
             if (operator.getTokenType() == TokenType.LOGIC_NOT){
-                System.out.println("Logical NOT " + astPrinter.print(right));
                 return new Expr.Logical(null, operator, right);
             }
 
