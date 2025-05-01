@@ -1,3 +1,15 @@
+/* INTERPRETER CONTROLLER
+ * This class serves as the controller for the interpreter's user interface.
+ * It manages the interaction between the UI elements (input TextArea, output
+ * TextArea, line numbers) and the core interpreter logic.
+ *
+ * It handles actions such as running the interpreter on the input code,
+ * loading code from a file, saving code to a file, and stopping the
+ * currently running interpreter. It also takes care of synchronizing the
+ * line numbers with the input text area and updating the output area with
+ * results and error messages from the lexer, parser, and interpreter.
+ */
+
 package com.example.bisayaplusplus;
 
 import com.example.bisayaplusplus.exception.LexerException;
@@ -30,9 +42,14 @@ public class InterpreterController {
     private Interpreter interpreter;
     private boolean addedListener = false;
 
+    /* Function that initializes the InterpreterController
+     * mainly for the line numbers and synch scrolling of
+     * the line numbers and the input text area.
+     */
     public void initialize(){
         taInput.textProperty().addListener((observable, oldText, newText)-> updateLineNumbers());
 
+        // synch scroll of input area and line numbers area
         taInput.scrollTopProperty().addListener((observable, oldText, newText)->{
             taLineNumbers.setScrollTop(newText.doubleValue());
         });
@@ -52,16 +69,14 @@ public class InterpreterController {
     }
 
     public void runInterpreter(ActionEvent actionEvent) {
+        taOutput.clear();
+        
+        /* Lexer */
         Lexer lexer = new Lexer(taInput.getText());
         List <Token> tokens;
 
-        taOutput.clear();
         try {
             tokens = lexer.scanTokens();
-
-//            for (Token t: tokens){
-//                taOutput.appendText(t.toString() + "\n");
-//            }
         } catch (LexerException e) {
             taOutput.setText(e.getMessage() + "\n");
             return;
@@ -71,6 +86,7 @@ public class InterpreterController {
             return;
         }
 
+        /* Parser */
         Parser parser = new Parser(tokens);
         List<Stmt> statements;
 
@@ -85,11 +101,7 @@ public class InterpreterController {
             return;
         }
 
-//        AstPrinter astPrinter = new AstPrinter();
-//        for (Stmt stmt : statements){
-//            taOutput.appendText(stmt.toString());
-//        }
-
+        /* Interpreter */
         interpreter = new Interpreter(statements, addedListener, taOutput);
         addedListener = true;
 

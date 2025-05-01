@@ -115,16 +115,12 @@ public class Lexer {
                     addToken(TokenType.PLUS);
                 }
                 break;
-            case '-': // comment
+            case '-': 
+                // comment
                 if (charMatch('-')){
-//                    if (checkPrevToken() != null && (checkPrevToken() == TokenType.IDENTIFIER || isIdentifierChar(getNextChar()))){
-//                        addToken(TokenType.DECREMENT);
-//                    } else {
-                        while (!isAtEnd() && getNextChar() != '\n'){
-                            getCurrCharThenNext();
-                        }
-//                        addToken(TokenType.COMMENT);
-//                    }
+                    while (!isAtEnd() && getNextChar() != '\n'){
+                        getCurrCharThenNext();
+                    }
                 } else if (isUnaryToken()) {
                     addToken(TokenType.NEGATIVE); // unary operator
                 } else {
@@ -132,7 +128,7 @@ public class Lexer {
                 }
                 break;
 
-
+            // COMPARATORS
             case '=': addToken(charMatch('=') ? TokenType.DOUBLE_EQUAL : TokenType.EQUAL); break;
             case '>': addToken(charMatch('=') ? TokenType.GREATER_OR_EQUAL : TokenType.GREATER_THAN); break;
             case '<':
@@ -153,6 +149,7 @@ public class Lexer {
                     throw new UnexpectedEOF("Missing escape character and closing escape code.", line);
                 }
 
+                // storing the escape char as ESCAPE_CHAR token
                 addToken(TokenType.ESCAPE_CHAR, getCurrCharThenNext());
 
                 if (isAtEnd()){
@@ -169,12 +166,15 @@ public class Lexer {
             case '\t':
                 // ignore whitespace
                 break;
+
             case '\n':
                 if (checkPrevToken() != null && checkPrevToken() != TokenType.NEW_LINE){
                     addToken(TokenType.NEW_LINE);
                 }
                 line++;
                 break;
+
+            // LITERALS
             case '\"': // string literal
                 addTokenString();
                 break;
@@ -197,11 +197,16 @@ public class Lexer {
 
     // function to take in variable names
     private void addTokenIdentifier(){
+        // traverse through the string while it deems the 
+        // current character to be legible as an identifier name 
         while (!isAtEnd() && isIdentifierChar(getNextChar())){
             getCurrCharThenNext();
         }
 
+        // getting string
         String value = program.substring(start, current);
+        
+        // checks if string is a keyword
         TokenType type = keywords.get(value);
 
         // conditional - if-else
@@ -256,14 +261,16 @@ public class Lexer {
     // function to get literal number
     private void addTokenNumber() throws LexerException {
         while (!isAtEnd() && Character.isDigit(getNextChar())){
-            System.out.println(getCurrCharThenNext());
+            getCurrCharThenNext();
         }
 
         if (!isAtEnd() && isIdentifierChar(program.charAt(current))){
             throw new LexerException("Unexpected identifier-like sequence after a number (" + program.substring(start, current) + ").", line);
         } else if (getNextChar() == '.'){
+            // decimal number
             getCurrCharThenNext();
 
+            // getting fractional part
             while (!isAtEnd() && Character.isDigit(getNextChar())){
                 getCurrCharThenNext();
             }
@@ -273,9 +280,7 @@ public class Lexer {
             }
 
             addToken(TokenType.DOUBLE, Double.parseDouble(program.substring(start, current)));
-            System.out.println("DOUBLE" + program.substring(start, current));
         } else {
-            System.out.println("number: "+  program.substring(start, current));
             addToken(TokenType.INTEGER, Integer.parseInt(program.substring(start, current)));
         }
     }

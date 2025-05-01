@@ -1,3 +1,20 @@
+/* INTERPRETER
+ * This class is responsible for executing the parsed statements of the Bisaya++
+ * programming language. It implements the Visitor pattern for both expressions
+ * (Expr.Visitor) and statements (Stmt.Visitor), allowing it to traverse the
+ * Abstract Syntax Tree (AST) and perform the corresponding actions.
+ *
+ * It maintains an Environment to manage variable scopes and a reference to the
+ * output TextArea for displaying results and handling user input. The interpreter
+ * handles various statement types (e.g., print, variable declaration, loops,
+ * conditionals, input) and expression types (e.g., binary, unary, literals,
+ * variables, assignments).
+ *
+ * It includes logic for type checking, value conversion, and handling runtime
+ * errors. It also manages user input through the TextArea, pausing execution
+ * when an 'input' statement is encountered and resuming upon user entry.
+ */
+
 package com.example.bisayaplusplus.interpreter;
 
 import com.example.bisayaplusplus.exception.RuntimeError;
@@ -80,12 +97,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
 
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
-        System.out.println("visitAssignExpr value datatype: " + expr.value.getClass());
         Object value = evaluate(expr.value);
-        System.out.println("assign value: " + value.getClass() + " " + value);
         String valueDataType = getValueDataType(expr.value, value);
         String destType = environment.getType(expr.name); // class for the destination variable
-        System.out.println(destType);
         value = getAdjustedValue(expr.value, value, expr.name, destType, valueDataType);
 
         environment.assign(expr.name, value);
@@ -340,7 +354,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
     @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
         Object value = evaluate(stmt.expression);
-//        System.out.println("appending to output");
 
         String output = (value == null ? "null" :  stringify(value));
 
@@ -384,6 +397,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         this.environment = prev;
         return null;
     }
+
     @Override
     public Object visitWhileStmt(Stmt.While stmt) {
         while (isTruthy(evaluate(stmt.condition))){
@@ -410,7 +424,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
             value = evaluate(stmt.initializer);
 
             final var valueDataType = getValueDataType(stmt.initializer, value);
-            System.out.println(value + " : " + value.getClass() + valueDataType);
 
             value = getAdjustedValue(stmt.initializer, value, stmt.name, stmt.dataType, valueDataType);
         }
@@ -427,11 +440,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object>{
         taOutput.setEditable(true);
 
         String input = awaitInput();
-//        taOutput.appendText(input);
         taOutput.setEditable(false);
 
         String[] inputs = input.split(",",-1);
-        System.out.println("inputs length: " + inputs.length);
+
         if (inputs.length < variables.size()){
             throw new RuntimeError(variables.get(0), "Received less inputs than needed. Expect " + variables.size() + ", but received " + inputs.length + ".");
         }

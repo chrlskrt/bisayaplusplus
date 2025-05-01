@@ -1,3 +1,14 @@
+/* SYMBOL TABLE
+ * This class manages the storage and retrieval of variables and their associated
+ * data types within a specific scope. It uses two HashMaps to store the variable
+ * name along with its value and its data type, respectively.
+ *
+ * It supports nested scopes through an 'enclosing' SymbolTable, allowing for
+ * variable shadowing and access to variables in outer scopes. Operations include
+ * defining new variables, checking for redeclarations, retrieving variable values
+ * and types, and assigning new values to existing variables.
+ */
+
 package com.example.bisayaplusplus.interpreter;
 
 import com.example.bisayaplusplus.exception.RuntimeError;
@@ -27,6 +38,7 @@ public class SymbolTable {
             throw new RuntimeError(var, "Redeclaration of " + var.getLiteral());
         }
 
+        // for strict non-redeclaration of variables in any scope.
 //        if (enclosing != null){
 //            return enclosing.isDeclaredInAnyEnv(var);
 //        }
@@ -73,38 +85,9 @@ public class SymbolTable {
         throw new RuntimeError(name, "Undefined variable '" + name.getLiteral().toString() + "'.");
     }
 
-    public void assignFromPrint(Token var, String value){
-        String varDataType = dataTypes.get(var.getLiteral().toString());
-        Object adjustedValue = null;
-        value = value.trim();
-
-        try {
-            switch (varDataType){
-                case "Integer":
-                    adjustedValue = Integer.parseInt(value);
-                    break;
-                case "Double":
-                    adjustedValue = Double.parseDouble(value);
-                    break;
-                case "Boolean":
-                    if (value.equals("\"OO\"") || value.equals("OO") ){
-                        adjustedValue = "OO";
-                    } else if (value.equals("DILI") || value.equals("\"DILI\"")){
-                        adjustedValue = "DILI";
-                    }
-                    break;
-                case "Character":
-                    if (value.length() == 1){
-                        adjustedValue = value.charAt(0);
-                    };
-                    break;
-                default:
-                    throw new RuntimeError(var, "Incompatible input for variable " + var.getLiteral() + " with type " + varDataType + ".");
-            }
-        } catch (NumberFormatException n){
-            throw new RuntimeError(var, "Expect " + varDataType + " but received " + value);
+    public void print(){
+        for (String key: values.keySet()){
+            System.out.println(key + " = " + values.get(key));
         }
-
-        assign(var, adjustedValue);
     }
 }
