@@ -287,7 +287,7 @@ public class Parser {
      *  Parses the 'read' statement from the token stream.
      *  Syntax:
             DAWAT: var {(, var)*}
-        
+
      *  After the colon in the statement, it expects one or more variable names,
      *  separated by a comma.
      */
@@ -536,7 +536,7 @@ public class Parser {
      * @return The consumed {@link Token} if it matches the `expectedType`.
      */
     private Token expectAndConsumeToken(TokenType expectedType, String expToken, String afterWhat, boolean isEndOfStmt) throws ParserException {
-        if (isAtEnd() && !isEndOfStmt) { 
+        if (isAtEnd() && !isEndOfStmt) {
             // reached the end of program, but is not done parsing a statement
             throw new ParserException("Unexpected EOF while parsing. Expect '"+expToken+"' after " + afterWhat, getPrevToken().getLine());
         } else if (isAtEnd() && isEndOfStmt && expectedType == TokenType.NEW_LINE){
