@@ -130,5 +130,5 @@ PUNDOK {
    Make sure JavaFX is configured in your project settings or module paths.
 
 3. **Run the project**
-   Go to src/main/java/com/example/bisayaplusplus/
-   Open `BisayaPlusPlusInterpreter.java` and run it. The GUI should launch, allowing you to edit and run code.
+   
+   Go to src/main/java/com/example/bisayaplusplus/. Open `BisayaPlusPlusInterpreter.java` and run it. The GUI should launch, allowing you to edit and run code.
